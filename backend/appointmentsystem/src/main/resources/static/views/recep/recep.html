@@ -1,0 +1,763 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aviva- Panel de Recepción</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet/less" type="text/css" href="../../css/style_recepcionista.css" />
+    <script src="https://cdn.jsdelivr.net/npm/less@4"></script>
+  </head>
+  <body data-tema="claro">
+    <div class="d-flex" id="wrapper">
+      <div class="sidebar bg-white" id="sidebar-wrapper">
+        <div class="sidebar-heading text-center py-4 fs-4 fw-bold text-dark">
+          <i class="fa-solid fa-notes-medical texto-primario-personalizado"></i> Aviva
+        </div>
+        <div class="list-group list-group-flush px-3">
+          <a
+            href="#"
+            class="list-group-item list-group-item-action nav-activo mb-2 rounded-pill"
+          >
+            <i class="fa-solid fa-border-all me-2"></i> Panel Principal
+          </a>
+          <a
+            href="#"
+            class="list-group-item list-group-item-action nav-link-custom mb-2 rounded-pill"
+          >
+            <i class="fa-regular fa-calendar-check me-2"></i> Citas
+          </a>
+          <a
+            href="#"
+            class="list-group-item list-group-item-action nav-link-custom mb-2 rounded-pill"
+          >
+            <i class="fa-solid fa-bed-pulse me-2"></i> Pacientes
+          </a>
+          <a
+            href="#"
+            class="list-group-item list-group-item-action nav-link-custom mb-2 rounded-pill"
+          >
+            <i class="fa-solid fa-stethoscope me-2"></i> Médicos
+          </a>
+          <a
+            href="#"
+            class="list-group-item list-group-item-action nav-link-custom mb-2 rounded-pill"
+          >
+            <i class="fa-solid fa-building me-2"></i> Departamentos
+          </a>
+        </div>
+      </div>
+      <div id="page-content-wrapper" class="w-100 fondo-claro-personalizado">
+        <nav
+          class="navbar navbar-expand-lg navbar-light bg-transparent py-3 px-4 navbar-superior"
+        >
+          <div class="d-flex align-items-center w-100 gap-3">
+            <button
+              class="btn btn-white rounded-2 boton-hamburgesa d-none"
+              id="boton-hamburguesa"
+              title="Menú"
+            >
+              <i class="fa-solid fa-bars"></i>
+            </button>
+            <div
+              class="input-group barra-busqueda rounded-pill overflow-hidden flex-grow-1"
+            >
+              <span class="input-group-text bg-white border-0 text-muted ps-4"
+                ><i class="fa-solid fa-search"></i
+              ></span>
+              <input
+                type="text"
+                class="form-control border-0 bg-white shadow-none"
+                placeholder="Buscar..."
+              />
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+              <button
+                class="btn btn-white rounded-circle shadow-sm boton-icono"
+                id="boton-modo-oscuro"
+                title="Cambiar modo"
+              >
+                <i class="fa-solid fa-moon"></i>
+              </button>
+              <button
+                class="btn btn-white rounded-circle shadow-sm boton-icono position-relative"
+              >
+                <i class="fa-regular fa-bell"></i>
+                <span
+                  class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"
+                ></span>
+              </button>
+              <div class="dropdown">
+                <a
+                  href="#"
+                  class="d-flex align-items-center text-dark text-decoration-none dropdown-toggle usuario-dropdown"
+                  id="dropdownUser"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  <img
+                    src="./avatar.png"
+                    alt="Avatar"
+                    width="40"
+                    height="40"
+                    class="rounded-circle me-2"
+                  />
+                  <strong class="fw-semibold d-none d-lg-block">Adrian Ramirez</strong>
+                </a>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        <div id="panel-principal" class="contenido-activo container-fluid px-4">
+          <div class="row g-4 mb-4">
+            <div class="col-md-3">
+              <div class="card tarjeta-estadistica border-0 rounded-4 p-2 shadow-sm">
+                <div class="card-body">
+                  <div
+                    class="d-flex justify-content-between align-items-center mb-2"
+                  >
+                    <h6 class="text-muted mb-0">
+                      <i class="fa-solid fa-magnifying-glass-dollar me-2"></i>
+                      Total Facturas
+                    </h6>
+                    <i class="fa-solid fa-ellipsis text-muted"></i>
+                  </div>
+                  <div class="d-flex align-items-end justify-content-between">
+                    <h2 class="fw-bold mb-0">1,287</h2>
+                    <span
+                      class="badge fondo-exito-sutil texto-exito rounded-pill px-2 py-1"
+                      ><i class="fa-solid fa-arrow-trend-up"></i> +2.14%</span
+                    >
+                  </div>
+                  <small class="text-muted">56 más que ayer</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card tarjeta-estadistica border-0 rounded-4 p-2 shadow-sm">
+                <div class="card-body">
+                  <div
+                    class="d-flex justify-content-between align-items-center mb-2"
+                  >
+                    <h6 class="text-muted mb-0">
+                      <i class="fa-solid fa-users me-2"></i> Pacientes Totales
+                    </h6>
+                    <i class="fa-solid fa-ellipsis text-muted"></i>
+                  </div>
+                  <div class="d-flex align-items-end justify-content-between">
+                    <h2 class="fw-bold mb-0">965</h2>
+                    <span
+                      class="badge fondo-exito-sutil texto-exito rounded-pill px-2 py-1"
+                      ><i class="fa-solid fa-arrow-trend-up"></i> +3.78%</span
+                    >
+                  </div>
+                  <small class="text-muted">45 más que ayer</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-4 mb-4">
+            <div class="col-12">
+              <div class="card border-0 rounded-4 shadow-sm p-4">
+                <div
+                  class="d-flex justify-content-between align-items-center mb-4"
+                >
+                  <h5 class="fw-bold mb-0">Citas de Pacientes</h5>
+                  <a href="#" class="text-muted text-decoration-none"
+                    >Ver Todo</a
+                  >
+                </div>
+
+                <div class="table-responsive">
+                  <table
+                    class="table table-borderless align-middle tabla-personalizada"
+                  >
+                    <thead class="text-muted small border-bottom">
+                      <tr>
+                        <th scope="col">
+                          Nombre <i class="fa-solid fa-sort ms-1"></i>
+                        </th>
+                        <th scope="col">
+                          Fecha <i class="fa-solid fa-sort ms-1"></i>
+                        </th>
+                        <th scope="col">
+                          Hora <i class="fa-solid fa-sort ms-1"></i>
+                        </th>
+                        <th scope="col">
+                          Médico <i class="fa-solid fa-sort ms-1"></i>
+                        </th>
+                        <th scope="col">
+                          Tratamiento <i class="fa-solid fa-sort ms-1"></i>
+                        </th>
+                        <th scope="col">
+                          Estado <i class="fa-solid fa-sort ms-1"></i>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="fw-semibold">Bart Simpson</td>
+                        <td>20-07-26</td>
+                        <td>09:00 AM</td>
+                        <td>Dr. Petra Rodriguez</td>
+                        <td>Revisión Rutinaria</td>
+                        <td>
+                          <span
+                            class="badge fondo-info-sutil texto-info rounded-pill px-3 py-2"
+                            >Confirmada</span
+                          >
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="fw-semibold">Martin Supreme</td>
+                        <td>20-07-26</td>
+                        <td>11:00 AM</td>
+                        <td>Dr. Damian Wayne</td>
+                        <td>Chequeo Pediátrico</td>
+                        <td>
+                          <span
+                            class="badge fondo-advertencia-sutil texto-advertencia rounded-pill px-3 py-2"
+                            >Pendiente</span
+                          >
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="panel-citas" class="contenido-oculto container-fluid px-4">
+          <div class="row g-4 mb-4">
+            <div class="col-md-3">
+              <div class="card tarjeta-estadistica border-0 rounded-4 p-2 shadow-sm">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="text-muted mb-0">
+                      <i class="fa-regular fa-calendar-check me-2"></i> Citas Confirmadas
+                    </h6>
+                    <i class="fa-solid fa-ellipsis text-muted"></i>
+                  </div>
+                  <div class="d-flex align-items-end justify-content-between">
+                    <h2 class="fw-bold mb-0">342</h2>
+                    <span class="badge fondo-exito-sutil texto-exito rounded-pill px-2 py-1">
+                      <i class="fa-solid fa-arrow-trend-up"></i> +5.2%
+                    </span>
+                  </div>
+                  <small class="text-muted">28 más que ayer</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card tarjeta-estadistica border-0 rounded-4 p-2 shadow-sm">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="text-muted mb-0">
+                      <i class="fa-solid fa-hourglass-end me-2"></i> Citas Pendientes
+                    </h6>
+                    <i class="fa-solid fa-ellipsis text-muted"></i>
+                  </div>
+                  <div class="d-flex align-items-end justify-content-between">
+                    <h2 class="fw-bold mb-0">87</h2>
+                    <span class="badge fondo-advertencia-sutil texto-advertencia rounded-pill px-2 py-1">
+                      <i class="fa-solid fa-arrow-trend-down"></i> -2.1%
+                    </span>
+                  </div>
+                  <small class="text-muted">12 menos que ayer</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card tarjeta-estadistica border-0 rounded-4 p-2 shadow-sm">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="text-muted mb-0">
+                      <i class="fa-solid fa-ban me-2"></i> Citas Canceladas
+                    </h6>
+                    <i class="fa-solid fa-ellipsis text-muted"></i>
+                  </div>
+                  <div class="d-flex align-items-end justify-content-between">
+                    <h2 class="fw-bold mb-0">18</h2>
+                    <span class="badge fondo-error-sutil texto-error rounded-pill px-2 py-1">
+                      <i class="fa-solid fa-arrow-trend-up"></i> +1.3%
+                    </span>
+                  </div>
+                  <small class="text-muted">5 más que ayer</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-4 mb-4">
+            <div class="col-12">
+              <div class="card border-0 rounded-4 shadow-sm p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h5 class="fw-bold mb-0">Listado de Citas</h5>
+                  <button class="btn btn-sm btn-outline-primary rounded-pill">
+                    <i class="fa-solid fa-plus me-2"></i> Nueva Cita
+                  </button>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table table-borderless align-middle tabla-personalizada">
+                    <thead class="text-muted small border-bottom">
+                      <tr>
+                        <th scope="col">Paciente <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Fecha <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Hora <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Médico <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Especialidad <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Estado <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="fw-semibold">Bart Simpson</td>
+                        <td>20-07-26</td>
+                        <td>09:00 AM</td>
+                        <td>Dr. Petra Rodriguez</td>
+                        <td>Cardiología</td>
+                        <td><span class="badge fondo-info-sutil texto-info rounded-pill px-3 py-2">Confirmada</span></td>
+                        <td>
+                          <button class="btn btn-sm btn-link text-primary">
+                            <i class="fa-solid fa-edit"></i>
+                          </button>
+                          <button class="btn btn-sm btn-link text-danger">
+                            <i class="fa-solid fa-trash"></i>
+                          </button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="fw-semibold">Martin Supreme</td>
+                        <td>20-07-26</td>
+                        <td>11:00 AM</td>
+                        <td>Dr. Damian Wayne</td>
+                        <td>Pediatría</td>
+                        <td><span class="badge fondo-advertencia-sutil texto-advertencia rounded-pill px-3 py-2">Pendiente</span></td>
+                        <td>
+                          <button class="btn btn-sm btn-link text-primary">
+                            <i class="fa-solid fa-edit"></i>
+                          </button>
+                          <button class="btn btn-sm btn-link text-danger">
+                            <i class="fa-solid fa-trash"></i>
+                          </button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="fw-semibold">Lisa Simpson</td>
+                        <td>21-07-26</td>
+                        <td>02:30 PM</td>
+                        <td>Dr. Petra Rodriguez</td>
+                        <td>Dermatología</td>
+                        <td><span class="badge fondo-info-sutil texto-info rounded-pill px-3 py-2">Confirmada</span></td>
+                        <td>
+                          <button class="btn btn-sm btn-link text-primary">
+                            <i class="fa-solid fa-edit"></i>
+                          </button>
+                          <button class="btn btn-sm btn-link text-danger">
+                            <i class="fa-solid fa-trash"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL PACIENTES -->
+        < <div class="row g-4 mb-4">
+            <div class="col-md-3">
+              <div class="card tarjeta-estadistica border-0 rounded-4 p-2 shadow-sm">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="text-muted mb-0">
+                      <i class="fa-solid fa-users me-2"></i> Pacientes Activos
+                    </h6>
+                    <i class="fa-solid fa-ellipsis text-muted"></i>
+                  </div>
+                  <div class="d-flex align-items-end justify-content-between">
+                    <h2 class="fw-bold mb-0">856</h2>
+                    <span class="badge fondo-exito-sutil texto-exito rounded-pill px-2 py-1">
+                      <i class="fa-solid fa-arrow-trend-up"></i> +4.5%
+                    </span>
+                  </div>
+                  <small class="text-muted">32 nuevos esta semana</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card tarjeta-estadistica border-0 rounded-4 p-2 shadow-sm">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="text-muted mb-0">
+                      <i class="fa-solid fa-user-nurse me-2"></i> En Tratamiento
+                    </h6>
+                    <i class="fa-solid fa-ellipsis text-muted"></i>
+                  </div>
+                  <div class="d-flex align-items-end justify-content-between">
+                    <h2 class="fw-bold mb-0">234</h2>
+                    <span class="badge fondo-info-sutil texto-info rounded-pill px-2 py-1">
+                      <i class="fa-solid fa-arrow-trend-up"></i> +3.2%
+                    </span>
+                  </div>
+                  <small class="text-muted">15 nuevos hoy</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card tarjeta-estadistica border-0 rounded-4 p-2 shadow-sm">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="text-muted mb-0">
+                      <i class="fa-solid fa-heart-pulse me-2"></i> Pacientes Recuperados
+                    </h6>
+                    <i class="fa-solid fa-ellipsis text-muted"></i>
+                  </div>
+                  <div class="d-flex align-items-end justify-content-between">
+                    <h2 class="fw-bold mb-0">542</h2>
+                    <span class="badge fondo-exito-sutil texto-exito rounded-pill px-2 py-1">
+                      <i class="fa-solid fa-arrow-trend-up"></i> +6.8%
+                    </span>
+                  </div>
+                  <small class="text-muted">89 este mes</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-4 mb-4">
+            <div class="col-12">
+              <div class="card border-0 rounded-4 shadow-sm p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h5 class="fw-bold mb-0">Listado de Pacientes</h5>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table table-borderless align-middle tabla-personalizada">
+                    <thead class="text-muted small border-bottom">
+                      <tr>
+                        <th scope="col">Nombre <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Cédula <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Edad <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Teléfono <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Estado <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="fw-semibold">Bart Simpson</td>
+                        <td>12345678</td>
+                        <td>28</td>
+                        <td>+51 998 765 432</td>
+                        <td><span class="badge fondo-exito-sutil texto-exito rounded-pill px-3 py-2">Activo</span></td>
+                        <td>
+                          <button class="btn btn-sm btn-link text-primary" title="Ver detalles">
+                            <i class="fa-solid fa-eye"></i>
+                          </button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="fw-semibold">Martin Supreme</td>
+                        <td>09876543</td>
+                        <td>35</td>
+                        <td>+51 997 654 321</td>
+                        <td><span class="badge fondo-exito-sutil texto-exito rounded-pill px-3 py-2">Activo</span></td>
+                        <td>
+                          <button class="btn btn-sm btn-link text-primary" title="Ver detalles">
+                            <i class="fa-solid fa-eye"></i>
+                          </button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="fw-semibold">Lisa Simpson</td>
+                        <td>55556666</td>
+                        <td>24</td>
+                        <td>+51 998 765 432</td>
+                        <td><span class="badge fondo-exito-sutil texto-exito rounded-pill px-3 py-2">Activo</span></td>
+                        <td>
+                          <button class="btn btn-sm btn-link text-primary" title="Ver detalles">
+                            <i class="fa-solid fa-eye"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL MÉDICOS -->
+        <div id="panel-medicos" class="contenido-oculto container-fluid px-4">
+            <div class="col-md-3">
+              <div class="card tarjeta-estadistica border-0 rounded-4 p-2 shadow-sm">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="text-muted mb-0">
+                      <i class="fa-solid fa-stethoscope me-2"></i> Total Médicos
+                    </h6>
+                    <i class="fa-solid fa-ellipsis text-muted"></i>
+                  </div>
+                  <div class="d-flex align-items-end justify-content-between">
+                    <h2 class="fw-bold mb-0">45</h2>
+                    <span class="badge fondo-exito-sutil texto-exito rounded-pill px-2 py-1">
+                      <i class="fa-solid fa-arrow-trend-up"></i> +2.2%
+                    </span>
+                  </div>
+                  <small class="text-muted">3 nuevos este mes</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card tarjeta-estadistica border-0 rounded-4 p-2 shadow-sm">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="text-muted mb-0">
+                      <i class="fa-solid fa-user-check me-2"></i> Médicos Disponibles
+                    </h6>
+                    <i class="fa-solid fa-ellipsis text-muted"></i>
+                  </div>
+                  <div class="d-flex align-items-end justify-content-between">
+                    <h2 class="fw-bold mb-0">38</h2>
+                    <span class="badge fondo-info-sutil texto-info rounded-pill px-2 py-1">
+                      <i class="fa-solid fa-percent"></i> 84.4%
+                    </span>
+                  </div>
+                  <small class="text-muted">7 en atención</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card tarjeta-estadistica border-0 rounded-4 p-2 shadow-sm">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="text-muted mb-0">
+                      <i class="fa-solid fa-graduation-cap me-2"></i> Especialidades
+                    </h6>
+                    <i class="fa-solid fa-ellipsis text-muted"></i>
+                  </div>
+                  <div class="d-flex align-items-end justify-content-between">
+                    <h2 class="fw-bold mb-0">12</h2>
+                    <span class="badge fondo-exito-sutil texto-exito rounded-pill px-2 py-1">
+                      <i class="fa-solid fa-check"></i>
+                    </span>
+                  </div>
+                  <small class="text-muted">Todas cubiertas</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-4 mb-4">
+            <div class="col-12">
+              <div class="card border-0 rounded-4 shadow-sm p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h5 class="fw-bold mb-0">Listado de Médicos</h5>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table table-borderless align-middle tabla-personalizada">
+                    <thead class="text-muted small border-bottom">
+                      <tr>
+                        <th scope="col">Nombre <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Especialidad <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Cédula Profesional <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Teléfono <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Estado <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="fw-semibold">Dr. Petra Rodriguez</td>
+                        <td>Cardiología</td>
+                        <td>MED-2019-001</td>
+                        <td>+51 991 234 567</td>
+                        <td><span class="badge fondo-exito-sutil texto-exito rounded-pill px-3 py-2">Disponible</span></td>
+                        <td>
+                          <button class="btn btn-sm btn-link text-primary" title="Ver perfil">
+                            <i class="fa-solid fa-eye"></i>
+                          </button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="fw-semibold">Dr. Damian Wayne</td>
+                        <td>Pediatría</td>
+                        <td>MED-2018-045</td>
+                        <td>+51 992 345 678</td>
+                        <td><span class="badge fondo-advertencia-sutil texto-advertencia rounded-pill px-3 py-2">En Consulta</span></td>
+                        <td>
+                          <button class="btn btn-sm btn-link text-primary" title="Ver perfil">
+                            <i class="fa-solid fa-eye"></i>
+                          </button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="fw-semibold">Dra. Sarah Connor</td>
+                        <td>Dermatología</td>
+                        <td>MED-2020-012</td>
+                        <td>+51 993 456 789</td>
+                        <td><span class="badge fondo-exito-sutil texto-exito rounded-pill px-3 py-2">Disponible</span></td>
+                        <td>
+                          <button class="btn btn-sm btn-link text-primary" title="Ver perfil">
+                            <i class="fa-solid fa-eye"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL DEPARTAMENTOS -->
+        <div id="panel-departamentos" class="contenido-oculto container-fluid px-4">
+            <div class="col-md-3">
+              <div class="card tarjeta-estadistica border-0 rounded-4 p-2 shadow-sm">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="text-muted mb-0">
+                      <i class="fa-solid fa-building me-2"></i> Total Departamentos
+                    </h6>
+                    <i class="fa-solid fa-ellipsis text-muted"></i>
+                  </div>
+                  <div class="d-flex align-items-end justify-content-between">
+                    <h2 class="fw-bold mb-0">12</h2>
+                    <span class="badge fondo-exito-sutil texto-exito rounded-pill px-2 py-1">
+                      <i class="fa-solid fa-check"></i>
+                    </span>
+                  </div>
+                  <small class="text-muted">100% operativos</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card tarjeta-estadistica border-0 rounded-4 p-2 shadow-sm">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="text-muted mb-0">
+                      <i class="fa-solid fa-bed me-2"></i> Camas Disponibles
+                    </h6>
+                    <i class="fa-solid fa-ellipsis text-muted"></i>
+                  </div>
+                  <div class="d-flex align-items-end justify-content-between">
+                    <h2 class="fw-bold mb-0">156</h2>
+                    <span class="badge fondo-info-sutil texto-info rounded-pill px-2 py-1">
+                      <i class="fa-solid fa-percent"></i> 62.4%
+                    </span>
+                  </div>
+                  <small class="text-muted">94 ocupadas</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card tarjeta-estadistica border-0 rounded-4 p-2 shadow-sm">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="text-muted mb-0">
+                      <i class="fa-solid fa-person-dots-from-line me-2"></i> Personal Total
+                    </h6>
+                    <i class="fa-solid fa-ellipsis text-muted"></i>
+                  </div>
+                  <div class="d-flex align-items-end justify-content-between">
+                    <h2 class="fw-bold mb-0">287</h2>
+                    <span class="badge fondo-exito-sutil texto-exito rounded-pill px-2 py-1">
+                      <i class="fa-solid fa-arrow-trend-up"></i> +3.1%
+                    </span>
+                  </div>
+                  <small class="text-muted">9 nuevos empleados</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-4 mb-4">
+            <div class="col-12">
+              <div class="card border-0 rounded-4 shadow-sm p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h5 class="fw-bold mb-0">Listado de Departamentos</h5>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table table-borderless align-middle tabla-personalizada">
+                    <thead class="text-muted small border-bottom">
+                      <tr>
+                        <th scope="col">Departamento <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Jefe Departamental <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Médicos <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Camas <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Estado <i class="fa-solid fa-sort ms-1"></i></th>
+                        <th scope="col">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="fw-semibold">Cardiología</td>
+                        <td>Dr. Petra Rodriguez</td>
+                        <td>8</td>
+                        <td>32</td>
+                        <td><span class="badge fondo-exito-sutil texto-exito rounded-pill px-3 py-2">Activo</span></td>
+                        <td>
+                          <button class="btn btn-sm btn-link text-primary" title="Ver información">
+                            <i class="fa-solid fa-eye"></i>
+                          </button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="fw-semibold">Pediatría</td>
+                        <td>Dr. Damian Wayne</td>
+                        <td>6</td>
+                        <td>24</td>
+                        <td><span class="badge fondo-exito-sutil texto-exito rounded-pill px-3 py-2">Activo</span></td>
+                        <td>
+                          <button class="btn btn-sm btn-link text-primary" title="Ver información">
+                            <i class="fa-solid fa-eye"></i>
+                          </button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="fw-semibold">Dermatología</td>
+                        <td>Dra. Sarah Connor</td>
+                        <td>5</td>
+                        <td>20</td>
+                        <td><span class="badge fondo-exito-sutil texto-exito rounded-pill px-3 py-2">Activo</span></td>
+                        <td>
+                          <button class="btn btn-sm btn-link text-primary" title="Ver información">
+                            <i class="fa-solid fa-eye"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../js/app_recepcionista.js"></script>
+  </body>
+</html>

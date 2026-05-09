@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Doctores - Clínica Aviva</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+
+    <link rel="stylesheet" href="../../css/Estilos.css" />
+
+    <!-- JS -->
+    <script defer src="../../js/app_admin.js"></script>
+  </head>
+
+  <body>
+    <div class="d-flex">
+      <div class="sidebar text-white">
+        <div class="logo-container">
+          <h2>AVIVA</h2>
+          <small>CLINIC</small>
+        </div>
+
+        <ul class="nav flex-column mt-4">
+          <li>
+            <a href="dashboard.html" class="nav-link">
+              <i class="bi bi-grid"></i>
+              Dashboard
+            </a>
+          </li>
+
+          <li>
+            <a href="pacientes.html" class="nav-link">
+              <i class="bi bi-person"></i>
+              Pacientes
+            </a>
+          </li>
+
+          <li>
+            <a href="doctores.html" class="nav-link active-menu">
+              <i class="bi bi-heart-pulse"></i>
+              Doctores
+            </a>
+          </li>
+
+          <li>
+            <a href="especialidades.html" class="nav-link">
+              <i class="bi bi-hospital"></i>
+              Especialidades
+            </a>
+          </li>
+
+          <li>
+            <a href="pagos.html" class="nav-link">
+              <i class="bi bi-credit-card"></i>
+              Pagos
+            </a>
+          </li>
+
+          <li>
+            <a href="configuracion.html" class="nav-link">
+              <i class="bi bi-gear"></i>
+              Configuración
+            </a>
+          </li>
+          <li>
+            <a href="#" onclick="logout()" class="nav-link text-danger mt-3">
+              <i class="bi bi-box-arrow-right"></i>
+              Cerrar sesión
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div class="content w-100">
+        <nav
+          class="navbar bg-white shadow-sm px-4 d-flex justify-content-between"
+        >
+          <div>
+            <h5 class="m-0 fw-semibold">Gestión de Doctores</h5>
+
+            <small class="text-muted">
+              Administración de horarios y especialidades
+            </small>
+          </div>
+
+          <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-light position-relative shadow-sm">
+              <i class="bi bi-bell"></i>
+
+              <span
+                class="badge bg-danger position-absolute top-0 start-100 translate-middle"
+              >
+                2
+              </span>
+            </button>
+
+            <div class="user-avatar">A</div>
+          </div>
+        </nav>
+
+        <div class="container-fluid p-4">
+          <div id="notificationBanner" class="notification-banner" aria-live="polite"></div>
+
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h3 class="fw-bold mb-1">Doctores</h3>
+
+              <p class="text-muted m-0">
+                Gestión de horarios y especialidades médicas
+              </p>
+            </div>
+
+            <button
+              class="btn btn-primary"
+              data-bs-toggle="modal"
+              data-bs-target="#modalDoctor"
+            >
+              <i class="bi bi-plus-lg"></i>
+
+              Agregar Doctor
+            </button>
+          </div>
+
+          <div class="dashboard-card mb-4">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-0">
+                    <i class="bi bi-search"></i>
+                  </span>
+
+                  <input
+                    id="buscarDoctor"
+                    type="text"
+                    class="form-control border-0"
+                    placeholder="Buscar por DNI o Nombre"
+                  />
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                  <button
+                    class="btn btn-outline-primary btn-sm"
+                    onclick="filtrarPorEspecialidad('')"
+                  >
+                    Todos
+                  </button>
+
+                  <button
+                    class="btn btn-outline-primary btn-sm"
+                    onclick="filtrarPorEspecialidad('Cardiología')"
+                  >
+                    Cardiología
+                  </button>
+
+                  <button
+                    class="btn btn-outline-primary btn-sm"
+                    onclick="filtrarPorEspecialidad('Dermatología')"
+                  >
+                    Dermatología
+                  </button>
+
+                  <button
+                    class="btn btn-outline-primary btn-sm"
+                    onclick="filtrarPorEspecialidad('Pediatría')"
+                  >
+                    Pediatría
+                  </button>
+
+                  <button
+                    class="btn btn-outline-primary btn-sm"
+                    onclick="filtrarPorEspecialidad('Ginecología')"
+                  >
+                    Ginecología
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-card">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle" id="tablaDoctores">
+                <thead>
+                  <tr>
+                    <th>Doctor</th>
+                    <th>DNI</th>
+                    <th>Especialidad</th>
+                    <th>Horario</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr data-horarios='{"Lunes":{"inicio":"10:00","fin":"19:00"},"Martes":{"inicio":"10:00","fin":"19:00"},"Miércoles":{"inicio":"10:00","fin":"19:00"},"Jueves":{"inicio":"10:00","fin":"19:00"},"Viernes":{"inicio":"10:00","fin":"19:00"}}'>
+                    <td>
+                      <div class="d-flex align-items-center gap-3">
+                        <div class="table-avatar">L</div>
+
+                        <div>
+                          <strong> Dr. López </strong>
+
+                          <div class="text-muted small">Cardiología</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>87654321</td>
+
+                    <td>Cardiología</td>
+
+                    <td><small>L-V: 10:00-19:00</small></td>
+
+                    <td>
+                      <span class="badge bg-success"> Activo </span>
+                    </td>
+
+                    <td>
+                      <div class="d-flex gap-2">
+                        <button class="btn btn-light btn-sm" onclick="editarDoctor(this)">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+
+                        <button class="btn btn-light btn-sm text-danger" onclick="eliminarDoctor(this)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr data-horarios='{"Martes":{"inicio":"08:00","fin":"16:00"},"Miércoles":{"inicio":"08:00","fin":"16:00"},"Viernes":{"inicio":"08:00","fin":"16:00"},"Sábado":{"inicio":"09:00","fin":"14:00"}}'>
+                    <td>
+                      <div class="d-flex align-items-center gap-3">
+                        <div class="table-avatar">R</div>
+
+                        <div>
+                          <strong> Dra. Ruiz </strong>
+
+                          <div class="text-muted small">Dermatología</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>12345678</td>
+
+                    <td>Dermatología</td>
+
+                    <td><small>Mar/Mié/Vie: 08:00-16:00</small></td>
+
+                    <td>
+                      <span class="badge bg-warning text-dark"> En descanso </span>
+                    </td>
+
+                    <td>
+                      <div class="d-flex gap-2">
+                        <button class="btn btn-light btn-sm" onclick="editarDoctor(this)">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+
+                        <button class="btn btn-light btn-sm text-danger" onclick="eliminarDoctor(this)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr data-horarios='{"Lunes":{"inicio":"05:00","fin":"13:00"},"Martes":{"inicio":"05:00","fin":"13:00"},"Miércoles":{"inicio":"05:00","fin":"13:00"},"Jueves":{"inicio":"05:00","fin":"13:00"}}'>
+                    <td>
+                      <div class="d-flex align-items-center gap-3">
+                        <div class="table-avatar">G</div>
+
+                        <div>
+                          <strong> Dr. García </strong>
+
+                          <div class="text-muted small">Pediatría</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>45678912</td>
+
+                    <td>Pediatría</td>
+
+                    <td><small>L-J: 05:00-13:00</small></td>
+
+                    <td>
+                      <span class="badge bg-secondary"> Inactivo </span>
+                    </td>
+
+                    <td>
+                      <div class="d-flex gap-2">
+                        <button class="btn btn-light btn-sm" onclick="editarDoctor(this)">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+
+                        <button class="btn btn-light btn-sm text-danger" onclick="eliminarDoctor(this)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr data-horarios='{"Lunes":{"inicio":"06:00","fin":"12:00"},"Martes":{"inicio":"06:00","fin":"12:00"},"Miércoles":{"inicio":"06:00","fin":"12:00"},"Jueves":{"inicio":"06:00","fin":"12:00"}}'>
+                    <td>
+                      <div class="d-flex align-items-center gap-3">
+                        <div class="table-avatar">M</div>
+
+                        <div>
+                          <strong>Dr. Morales</strong>
+                          <div class="text-muted small">Cardiología</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>74125896</td>
+
+                    <td>Cardiología</td>
+
+                    <td><small>L-J: 06:00-12:00</small></td>
+
+                    <td>
+                      <span class="badge bg-success"> Activo </span>
+                    </td>
+
+                    <td>
+                      <div class="d-flex gap-2">
+                        <button class="btn btn-light btn-sm" onclick="editarDoctor(this)">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+
+                        <button class="btn btn-light btn-sm text-danger" onclick="eliminarDoctor(this)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr data-horarios='{"Lunes":{"inicio":"13:00","fin":"21:00"},"Martes":{"inicio":"13:00","fin":"21:00"},"Miércoles":{"inicio":"13:00","fin":"21:00"}}'>
+                    <td>
+                      <div class="d-flex align-items-center gap-3">
+                        <div class="table-avatar">V</div>
+
+                        <div>
+                          <strong>Dra. Vega</strong>
+                          <div class="text-muted small">Pediatría</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>85214796</td>
+
+                    <td>Pediatría</td>
+
+                    <td><small>L-Mié-Vie: 13:00-21:00</small></td>
+
+                    <td>
+                      <span class="badge bg-success"> Activo </span>
+                    </td>
+
+                    <td>
+                      <div class="d-flex gap-2">
+                        <button class="btn btn-light btn-sm" onclick="editarDoctor(this)">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+
+                        <button class="btn btn-light btn-sm text-danger" onclick="eliminarDoctor(this)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr data-horarios='{"Lunes":{"inicio":"08:00","fin":"14:00"},"Martes":{"inicio":"08:00","fin":"14:00"}}'>
+                    <td>
+                      <div class="d-flex align-items-center gap-3">
+                        <div class="table-avatar">S</div>
+
+                        <div>
+                          <strong>Dr. Salas</strong>
+                          <div class="text-muted small">Dermatología</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>96325874</td>
+
+                    <td>Dermatología</td>
+
+                    <td><small>L-M: 08:00-14:00</small></td>
+
+                    <td>
+                      <span class="badge bg-secondary"> Inactivo </span>
+                    </td>
+
+                    <td>
+                      <div class="d-flex gap-2">
+                        <button class="btn btn-light btn-sm" onclick="editarDoctor(this)">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+
+                        <button class="btn btn-light btn-sm text-danger" onclick="eliminarDoctor(this)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr data-horarios='{"Lunes":{"inicio":"09:00","fin":"15:00"},"Martes":{"inicio":"09:00","fin":"15:00"}}'>
+                    <td>
+                      <div class="d-flex align-items-center gap-3">
+                        <div class="table-avatar">C</div>
+
+                        <div>
+                          <strong>Dra. Castillo</strong>
+                          <div class="text-muted small">Ginecología</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>74123698</td>
+
+                    <td>Ginecología</td>
+
+                    <td><small>L-M: 09:00-15:00</small></td>
+
+                    <td>
+                      <span class="badge bg-success"> Activo </span>
+                    </td>
+
+                    <td>
+                      <div class="d-flex gap-2">
+                        <button class="btn btn-light btn-sm" onclick="editarDoctor(this)">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+
+                        <button class="btn btn-light btn-sm text-danger" onclick="eliminarDoctor(this)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr data-horarios='{"Lunes":{"inicio":"08:00","fin":"14:00"},"Miércoles":{"inicio":"08:00","fin":"14:00"}}'>
+                    <td>
+                      <div class="d-flex align-items-center gap-3">
+                        <div class="table-avatar">P</div>
+
+                        <div>
+                          <strong>Dr. Pérez</strong>
+                          <div class="text-muted small">Cardiología</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>36925814</td>
+
+                    <td>Cardiología</td>
+
+                    <td><small>L-Mié: 08:00-14:00</small></td>
+
+                    <td>
+                      <span class="badge bg-warning text-dark"> En descanso </span>
+                    </td>
+
+                    <td>
+                      <div class="d-flex gap-2">
+                        <button class="btn btn-light btn-sm" onclick="editarDoctor(this)">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+
+                        <button class="btn btn-light btn-sm text-danger" onclick="eliminarDoctor(this)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="modalDoctor" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow rounded-4">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalDoctorTitle">Agregar Doctor</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+
+          <div class="modal-body">
+            <!-- Datos Personales -->
+            <h6 class="fw-bold mb-3">Datos Personales</h6>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label">Nombre</label>
+                <input type="text" id="nombreDoctor" class="form-control" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">DNI</label>
+                <input type="text" id="dniDoctor" class="form-control" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Celular</label>
+                <input type="tel" id="celularDoctor" class="form-control" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Correo</label>
+                <input type="email" id="correoDoctor" class="form-control" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Especialidad</label>
+                <select id="especialidadDoctor" class="form-select">
+                  <option value="">Seleccionar...</option>
+                  <option>Cardiología</option>
+                  <option>Dermatología</option>
+                  <option>Pediatría</option>
+                  <option>Ginecología</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Estado</label>
+                <select id="estadoDoctor" class="form-select">
+                  <option>Activo</option>
+                  <option>Inactivo</option>
+                  <option>En descanso</option>
+                </select>
+              </div>
+            </div>
+
+            <hr>
+
+            <!-- Horarios por Día -->
+            <h6 class="fw-bold mb-3">Horarios por Día de la Semana</h6>
+            <div id="horariosContainer" class="mb-3">
+              <!-- Se cargarán dinámicamente -->
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" id="guardarDoctorBtn" class="btn btn-primary" onclick="agregarDoctor()">Guardar Doctor</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

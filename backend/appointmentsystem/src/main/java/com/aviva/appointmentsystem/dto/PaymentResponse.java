@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 /**
  * DTO para la respuesta de un pago
  */
+/* 
 public record PaymentResponse(
     Long id,
     BigDecimal amount,
@@ -16,4 +17,16 @@ public record PaymentResponse(
     LocalDateTime createdAt,
     LocalDateTime updatedAt
 ) {
-}
+}*/
+
+public record PaymentResponse(
+    Long id,
+    BigDecimal amount,
+    String status,
+    String method,
+    String description,
+    LocalDateTime paymentDate,
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt,
+    Long appointmentId
+) {}

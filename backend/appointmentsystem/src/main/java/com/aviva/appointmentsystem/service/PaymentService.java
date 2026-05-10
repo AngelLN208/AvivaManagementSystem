@@ -197,6 +197,8 @@ public class PaymentService {
     /**
      * Mapea entidad a DTO
      */
+
+    /* 
     private PaymentResponse mapToResponse(Payment payment) {
         return new PaymentResponse(
             payment.getId(),
@@ -207,6 +209,20 @@ public class PaymentService {
             payment.getPaymentDate(),
             payment.getCreatedAt(),
             payment.getUpdatedAt()
+        );
+    }
+    */
+   private PaymentResponse mapToResponse(Payment payment) {
+        return new PaymentResponse(
+            payment.getId(),
+            payment.getAmount(),
+            payment.getStatus().name(),
+            payment.getMethod().name(),
+            payment.getDescription(),
+            payment.getPaymentDate(),
+            payment.getCreatedAt(),
+            payment.getUpdatedAt(),
+            payment.getAppointment() != null ? payment.getAppointment().getId() : null
         );
     }
 }

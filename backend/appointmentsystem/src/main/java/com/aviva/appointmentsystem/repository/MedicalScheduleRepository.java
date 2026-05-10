@@ -18,3 +18,5 @@ public interface MedicalScheduleRepository extends JpaRepository<MedicalSchedule
     List<MedicalSchedule> findByDoctorAndDayOfWeek(Doctor doctor, DayOfWeek dayOfWeek);
     List<MedicalSchedule> findByDoctorAndDayOfWeekAndActive(Doctor doctor, DayOfWeek dayOfWeek, Boolean active);
 }
+
+

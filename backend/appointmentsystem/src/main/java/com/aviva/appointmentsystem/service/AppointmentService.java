@@ -2,12 +2,14 @@ package com.aviva.appointmentsystem.service;
 
 import com.aviva.appointmentsystem.dto.AppointmentRequest;
 import com.aviva.appointmentsystem.dto.AppointmentResponse;
+import com.aviva.appointmentsystem.dto.AvailableSlotResponse;
 import com.aviva.appointmentsystem.dto.DoctorResponse;
 import com.aviva.appointmentsystem.dto.PatientResponse;
 import com.aviva.appointmentsystem.entity.Appointment;
 import com.aviva.appointmentsystem.entity.AppointmentStatus;
 import com.aviva.appointmentsystem.entity.AuditLog;
 import com.aviva.appointmentsystem.entity.Doctor;
+import com.aviva.appointmentsystem.entity.MedicalSchedule;
 import com.aviva.appointmentsystem.entity.Notification;
 import com.aviva.appointmentsystem.entity.Patient;
 import com.aviva.appointmentsystem.entity.Payment;
@@ -27,10 +29,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.Set;
+import com.aviva.appointmentsystem.repository.MedicalScheduleRepository;
 
 /**
  * Servicio para gestionar citas médicas
@@ -58,6 +67,9 @@ public class AppointmentService {
 
     @Autowired
     private NotificationService notificationService;
+
+    @Autowired
+    private MedicalScheduleRepository medicalScheduleRepository;
 
     /**
      * Crea una nueva cita médica
@@ -248,6 +260,58 @@ public class AppointmentService {
                 .toList();
     }
 
+    /**
+     * Obtiene los slots disponibles de un doctor para una fecha específica
+     * Calcula los horarios libres restando las citas ya agendadas
+     * RN-38: Solo muestra horarios dentro del schedule activo del doctor
+     */
+
+    @Transactional(readOnly = true)
+    public List<AvailableSlotResponse> getAvailableSlots(Long doctorId, LocalDate date) {
+        logger.info("Obteniendo slots disponibles para doctor: ID={}, fecha={}", doctorId, date);
+
+        Doctor doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
+
+        DayOfWeek dayOfWeek = date.getDayOfWeek();
+
+        List<MedicalSchedule> schedules = medicalScheduleRepository
+                .findByDoctorAndDayOfWeekAndActive(doctor, dayOfWeek, true);
+
+        if (schedules.isEmpty()) {
+            return List.of();
+        }
+
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay   = date.atTime(LocalTime.MAX);
+
+        List<Appointment> citasDelDia = appointmentRepository
+                .findByDoctorAndAppointmentDateTimeBetweenAndStatusNot(
+                    doctor, startOfDay, endOfDay, AppointmentStatus.CANCELLED
+                );
+
+        Set<LocalTime> horasOcupadas = citasDelDia.stream()
+                .map(a -> a.getAppointmentDateTime().toLocalTime())
+                .collect(Collectors.toSet());
+
+        List<AvailableSlotResponse> slotsDisponibles = new ArrayList<>();
+
+        for (MedicalSchedule schedule : schedules) {
+            LocalTime slot = schedule.getStartTime();
+            while (slot.plusMinutes(schedule.getAppointmentDurationMinutes())
+                    .compareTo(schedule.getEndTime()) <= 0) {
+                if (!horasOcupadas.contains(slot)) {
+                    slotsDisponibles.add(new AvailableSlotResponse(
+                        slot,
+                        slot.plusMinutes(schedule.getAppointmentDurationMinutes())
+                    ));
+                }
+                slot = slot.plusMinutes(schedule.getAppointmentDurationMinutes());
+            }
+        }
+
+        return slotsDisponibles;
+    }
     /**
      * Valida que no haya conflicto de horario para el doctor
      */

@@ -3,12 +3,14 @@ package com.aviva.appointmentsystem.controller;
 import com.aviva.appointmentsystem.dto.ApiResponse;
 import com.aviva.appointmentsystem.dto.AppointmentRequest;
 import com.aviva.appointmentsystem.dto.AppointmentResponse;
+import com.aviva.appointmentsystem.dto.AvailableSlotResponse;
 import com.aviva.appointmentsystem.entity.AppointmentStatus;
 import com.aviva.appointmentsystem.service.AppointmentService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,7 +22,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.List;
+
 
 /**
  * Controlador de citas médicas
@@ -154,4 +158,20 @@ public class AppointmentController {
         return ResponseEntity
                 .ok(ApiResponse.success(response, "Citas encontradas: " + response.size()));
     }
+
+    /**
+   * Obtiene slots disponibles de un doctor para una fecha específica
+   * GET /api/appointments/doctor/{doctorId}/available-slots?date=2024-12-20
+   */
+   @GetMapping("/doctor/{doctorId}/available-slots")
+   public ResponseEntity<ApiResponse<List<AvailableSlotResponse>>> getAvailableSlots(
+        @PathVariable Long doctorId,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+   logger.info("GET /api/appointments/doctor/{}/available-slots - fecha={}", doctorId, date);
+
+   List<AvailableSlotResponse> response = appointmentService.getAvailableSlots(doctorId, date);
+
+        return ResponseEntity
+        .ok(ApiResponse.success(response, "Slots disponibles: " + response.size()));
+}
 }

@@ -894,15 +894,22 @@ function renderTablaHorarios(horarios, tbody) {
             : `<span class="badge fondo-error-sutil texto-error rounded-pill px-3 py-1">Inactivo</span>`;
 
         return `
-        <tr data-nombre="${nombre.toLowerCase()}" data-especialidad="${esp}">
-            <td class="fw-semibold">${nombre}</td>
-            <td>${esp}</td>
-            <td>${dia}</td>
-            <td>${horario}</td>
-            <td>${s.appointmentDurationMinutes} min</td>
-            <td>${s.maxAppointmentsPerDay}</td>
-            <td>${estado}</td>
-        </tr>`;
+            <tr data-nombre="${nombre.toLowerCase()}" data-especialidad="${esp}">
+                <td class="fw-semibold">${nombre}</td>
+                <td>${esp}</td>
+                <td>${dia}</td>
+                <td>${horario}</td>
+                <td>${s.appointmentDurationMinutes} min</td>
+                <td>${s.maxAppointmentsPerDay}</td>
+                <td>${estado}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-light text-primary rounded-circle"
+                            title="Ver disponibilidad"
+                            onclick="abrirDisponibilidad(${d.id}, '${nombre}', '${esp}')">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </td>
+            </tr>`;
     }).join('');
 }
 
@@ -994,6 +1001,51 @@ function filtrarNotificaciones() {
         const okEstado = !estado || fila.dataset.estado === estado;
         fila.style.display = (okTipo && okCanal && okEstado) ? '' : 'none';
     });
+}
+
+let _dispDoctorId = null;
+
+function abrirDisponibilidad(doctorId, nombre, especialidad) {
+    _dispDoctorId = doctorId;
+    document.getElementById('disp_avatar').textContent =
+        nombre.replace('Dr. ', '').split(' ').map(n => n[0]).join('').substring(0, 2);
+    document.getElementById('disp_nombre').textContent       = nombre;
+    document.getElementById('disp_especialidad').textContent = especialidad;
+    document.getElementById('disp_fecha').value              = '';
+    document.getElementById('disp_fecha').min                = new Date().toISOString().split('T')[0];
+    document.getElementById('disp_slots_wrapper').classList.add('d-none');
+    document.getElementById('disp_sin_slots').classList.add('d-none');
+    new bootstrap.Modal(document.getElementById('modalDisponibilidad')).show();
+}
+
+async function cargarSlotsDisponibilidad() {
+    const fecha = document.getElementById('disp_fecha')?.value;
+    if (!fecha || !_dispDoctorId) return;
+
+    const slotsWrapper = document.getElementById('disp_slots_wrapper');
+    const sinSlots     = document.getElementById('disp_sin_slots');
+    const slotsDiv     = document.getElementById('disp_slots');
+
+    slotsDiv.innerHTML = `<span class="text-muted small">Cargando...</span>`;
+    slotsWrapper.classList.remove('d-none');
+    sinSlots.classList.add('d-none');
+
+    try {
+        const slots = await apiFetch(`${BASE}/appointments/doctor/${_dispDoctorId}/available-slots?date=${fecha}`);
+        if (!slots.length) {
+            slotsWrapper.classList.add('d-none');
+            sinSlots.classList.remove('d-none');
+            return;
+        }
+        slotsDiv.innerHTML = slots.map(s =>
+            `<span class="badge fondo-exito-sutil texto-exito rounded-pill px-3 py-2">
+                ${s.startTime.substring(0,5)} — ${s.endTime.substring(0,5)}
+            </span>`
+        ).join('');
+        slotsWrapper.classList.remove('d-none');
+    } catch {
+        slotsDiv.innerHTML = `<span class="text-danger small">Error cargando horarios.</span>`;
+    }
 }
 
 // ============================================================
@@ -1115,6 +1167,8 @@ document.getElementById('repro_fecha')
                 document.getElementById('filtro-especialidad').value = '';
                 filtrarHorarios();
             });
+        document.getElementById('disp_fecha')
+            ?.addEventListener('change', cargarSlotsDisponibilidad);
     }
 
     // ── Notificaciones ──
@@ -1135,4 +1189,5 @@ document.getElementById('repro_fecha')
                 filtrarNotificaciones();
             });
     }
+
 });

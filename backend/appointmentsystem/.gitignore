@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Logs y artefactos temporales de desarrollo ###
+*.log
+spring.log
+compile_errors.txt
+*.py

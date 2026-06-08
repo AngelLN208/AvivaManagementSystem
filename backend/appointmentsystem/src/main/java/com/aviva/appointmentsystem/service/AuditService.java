@@ -6,37 +6,50 @@ import com.aviva.appointmentsystem.exception.ResourceNotFoundException;
 import com.aviva.appointmentsystem.repository.AuditLogRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 /**
- * Servicio para gestionar auditoría de cambios
+ * Servicio de solo lectura para trazabilidad de auditoría.
+ *
+ * RN-42/RN-43: Los registros de auditoría se crean automáticamente en AppointmentService
+ * y PaymentService cuando ocurren acciones clave (CREATED, RESCHEDULED, CANCELLED,
+ * PAYMENT_CONFIRMED). Este servicio SOLO expone endpoints de consulta.
+ *
+ * NUNCA se exponen endpoints de creación, modificación o eliminación de audit logs.
+ * La inmutabilidad es una garantía de integridad del sistema.
+ *
+ * Inyección: Constructor injection (no @Autowired).
  */
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class AuditService {
 
     private static final Logger logger = LoggerFactory.getLogger(AuditService.class);
 
-    @Autowired
-    private AuditLogRepository auditLogRepository;
+    private final AuditLogRepository auditLogRepository;
+
+    public AuditService(AuditLogRepository auditLogRepository) {
+        this.auditLogRepository = auditLogRepository;
+    }
 
     /**
-     * Obtiene el historial de cambios de una cita
-     * Ordenado por fecha de creación (más reciente primero)
+     * Obtiene el historial completo de auditoría de una cita.
+     * Ordenado por fecha de creación descendente (más reciente primero).
+     *
+     * @param appointmentId ID de la cita
+     * @return lista de registros de auditoría ordenados por fecha DESC
      */
-    @Transactional(readOnly = true)
     public List<AuditLogResponse> getAppointmentHistory(Long appointmentId) {
         logger.debug("Obteniendo historial de auditoría para cita ID={}", appointmentId);
 
-        // Validar que la cita exista (la validación se hace en el controlador)
-        List<AuditLog> logs = auditLogRepository.findByAppointmentIdOrderByCreatedAtDesc(appointmentId);
+        List<AuditLog> logs = auditLogRepository
+                .findByAppointmentIdOrderByCreatedAtDesc(appointmentId);
 
         if (logs.isEmpty()) {
-            logger.warn("No se encontró historial de auditoría para cita ID={}", appointmentId);
+            logger.debug("Sin registros de auditoría para cita ID={}", appointmentId);
         }
 
         return logs.stream()
@@ -45,9 +58,11 @@ public class AuditService {
     }
 
     /**
-     * Obtiene un registro de auditoría por ID
+     * Obtiene un registro de auditoría individual por su ID.
+     *
+     * @param id ID del registro de auditoría
+     * @throws ResourceNotFoundException si no existe
      */
-    @Transactional(readOnly = true)
     public AuditLogResponse getById(Long id) {
         logger.debug("Obteniendo registro de auditoría ID={}", id);
 
@@ -57,8 +72,13 @@ public class AuditService {
         return mapToResponse(auditLog);
     }
 
+    // ========================================================
+    // MAPEO Entity → DTO
+    // ========================================================
+
     /**
-     * Mapea entidad a DTO
+     * Mapea AuditLog a AuditLogResponse.
+     * NUNCA devuelve la entidad AuditLog directamente.
      */
     private AuditLogResponse mapToResponse(AuditLog auditLog) {
         return new AuditLogResponse(

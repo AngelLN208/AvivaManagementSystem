@@ -11,18 +11,25 @@ import com.aviva.appointmentsystem.exception.ValidationException;
 import com.aviva.appointmentsystem.repository.PatientRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 
 /**
- * Servicio para gestionar pacientes
+ * Servicio para gestionar pacientes.
+ * 
+ * Responsabilidades (Service Layer):
+ * - TODA la lógica de negocio reside aquí
+ * - Validaciones de unicidad (DNI, email)
+ * - Validación de género (enum Gender)
+ * - Resolución de relaciones (el Controller NUNCA lo hace)
+ * - Búsqueda por ID/DNI con excepción si no existe
+ * - Búsqueda flexible con filtros combinados
+ * - Conversión Entity → DTO (mapToResponse)
+ * 
+ * El Controller NO hace lógica, solo delega aquí.
  */
 @Service
 @Transactional
@@ -30,11 +37,22 @@ public class PatientService {
 
     private static final Logger logger = LoggerFactory.getLogger(PatientService.class);
 
-    @Autowired
-    private PatientRepository patientRepository;
+    private final PatientRepository patientRepository;
+
+    public PatientService(PatientRepository patientRepository) {
+        this.patientRepository = patientRepository;
+    }
 
     /**
-     * Crea un nuevo paciente
+     * Crea un nuevo paciente (uso interno del personal).
+     * 
+     * Validaciones del Service:
+     * - DNI no duplicado
+     * - Email no duplicado
+     * - Género válido (MALE, FEMALE, OTHER)
+     * 
+     * NOTA: Para auto-registro de pacientes (que crea User + Patient),
+     * se usa AuthService.registerPatient().
      */
     public PatientResponse create(PatientRequest request) {
         logger.info("Creando nuevo paciente con DNI: {}", request.dni());
@@ -42,60 +60,86 @@ public class PatientService {
         // Validar que no exista paciente con el mismo DNI
         if (patientRepository.findByDni(request.dni()).isPresent()) {
             logger.warn("Ya existe un paciente con DNI: {}", request.dni());
-            throw new ResourceAlreadyExistsException("Ya existe un paciente con DNI: " + request.dni());
+            throw new ResourceAlreadyExistsException(
+                "Ya existe un paciente con DNI: " + request.dni()
+            );
         }
 
         // Validar que no exista paciente con el mismo email
         if (patientRepository.findByEmail(request.email()).isPresent()) {
             logger.warn("Ya existe un paciente con email: {}", request.email());
-            throw new ResourceAlreadyExistsException("Ya existe un paciente con email: " + request.email());
+            throw new ResourceAlreadyExistsException(
+                "Ya existe un paciente con email: " + request.email()
+            );
         }
+
+        // Validar y convertir género
+        Gender gender = parseGender(request.gender());
+
+        LocalDateTime now = LocalDateTime.now();
 
         Patient patient = new Patient();
         patient.setDni(request.dni());
         patient.setFirstName(request.firstName());
         patient.setLastName(request.lastName());
-        patient.setGender(Gender.valueOf(request.gender().toUpperCase()));
-        patient.setDateOfBirth(parseDate(request.dateOfBirth()));
+        patient.setGender(gender);
+        patient.setDateOfBirth(request.dateOfBirth()); // Ya es LocalDate con @Past validado
         patient.setPhone(request.phone());
         patient.setEmail(request.email());
         patient.setAddress(request.address());
         patient.setStatus(UserStatus.ACTIVE);
-        patient.setCreatedAt(LocalDateTime.now());
-        patient.setUpdatedAt(LocalDateTime.now());
+        patient.setCreatedAt(now);
+        patient.setUpdatedAt(now);
 
         Patient saved = patientRepository.save(patient);
-        logger.info("Paciente creado exitosamente: ID={}", saved.getId());
+        logger.info("Paciente creado exitosamente: ID={}, DNI={}", saved.getId(), saved.getDni());
 
         return mapToResponse(saved);
     }
 
     /**
-     * Actualiza un paciente
+     * Actualiza un paciente existente.
+     * 
+     * @param id ID del paciente a actualizar
+     * @param request datos actualizados
+     * @return paciente actualizado
+     * @throws ResourceNotFoundException si el ID no existe
+     * @throws ResourceAlreadyExistsException si el nuevo DNI/email ya está en uso por OTRO paciente
      */
     public PatientResponse update(Long id, PatientRequest request) {
         logger.info("Actualizando paciente ID={}", id);
 
+        // 1. Buscar el paciente o lanzar 404
         Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Paciente", id));
 
-        // Validar DNI si cambió
-        if (!patient.getDni().equals(request.dni()) &&
-            patientRepository.findByDni(request.dni()).isPresent()) {
-            throw new ResourceAlreadyExistsException("Ya existe un paciente con DNI: " + request.dni());
+        // 2. Si cambió el DNI, verificar que no exista otro con el mismo DNI
+        if (!patient.getDni().equals(request.dni())) {
+            patientRepository.findByDni(request.dni()).ifPresent(existing -> {
+                throw new ResourceAlreadyExistsException(
+                    "Ya existe un paciente con DNI: " + request.dni()
+                );
+            });
         }
 
-        // Validar email si cambió
-        if (!patient.getEmail().equals(request.email()) &&
-            patientRepository.findByEmail(request.email()).isPresent()) {
-            throw new ResourceAlreadyExistsException("Ya existe un paciente con email: " + request.email());
+        // 3. Si cambió el email, verificar que no exista otro con el mismo email
+        if (!patient.getEmail().equals(request.email())) {
+            patientRepository.findByEmail(request.email()).ifPresent(existing -> {
+                throw new ResourceAlreadyExistsException(
+                    "Ya existe un paciente con email: " + request.email()
+                );
+            });
         }
 
+        // 4. Validar y convertir género
+        Gender gender = parseGender(request.gender());
+
+        // 5. Actualizar campos
         patient.setDni(request.dni());
         patient.setFirstName(request.firstName());
         patient.setLastName(request.lastName());
-        patient.setGender(Gender.valueOf(request.gender().toUpperCase()));
-        patient.setDateOfBirth(parseDate(request.dateOfBirth()));
+        patient.setGender(gender);
+        patient.setDateOfBirth(request.dateOfBirth()); // Ya es LocalDate
         patient.setPhone(request.phone());
         patient.setEmail(request.email());
         patient.setAddress(request.address());
@@ -108,7 +152,11 @@ public class PatientService {
     }
 
     /**
-     * Obtiene un paciente por ID
+     * Obtiene un paciente por ID.
+     * 
+     * @param id ID del paciente
+     * @return paciente encontrado
+     * @throws ResourceNotFoundException si el ID no existe
      */
     @Transactional(readOnly = true)
     public PatientResponse getById(Long id) {
@@ -121,58 +169,70 @@ public class PatientService {
     }
 
     /**
-     * Obtiene un paciente por DNI
+     * Obtiene un paciente por DNI.
+     * 
+     * @param dni DNI del paciente (8 dígitos)
+     * @return paciente encontrado
+     * @throws ResourceNotFoundException si no existe paciente con ese DNI
      */
     @Transactional(readOnly = true)
     public PatientResponse getByDni(String dni) {
         logger.debug("Obteniendo paciente por DNI: {}", dni);
 
         Patient patient = patientRepository.findByDni(dni)
-                .orElseThrow(() -> new ResourceNotFoundException("Paciente con DNI: " + dni));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "Paciente con DNI: " + dni + " no encontrado"
+                ));
 
         return mapToResponse(patient);
     }
 
     /**
-     * Lista todos los pacientes activos
+     * Lista todos los pacientes activos.
+     * 
+     * Usa findByStatus() para filtrar directamente en la DB
+     * (evita cargar todos y filtrar en Java — antipatrón).
      */
     @Transactional(readOnly = true)
     public List<PatientResponse> getAll() {
-        logger.debug("Obteniendo todos los pacientes");
-        return patientRepository.findAll()
+        logger.debug("Obteniendo todos los pacientes activos");
+
+        return patientRepository.findByStatus(UserStatus.ACTIVE)
                 .stream()
-                .filter(p -> p.getStatus() == UserStatus.ACTIVE)
                 .map(this::mapToResponse)
                 .toList();
     }
 
     /**
-     * Busca pacientes por nombre
+     * Busca pacientes activos por nombre y/o apellido.
+     * Usa búsqueda LIKE case-insensitive.
+     * 
+     * @param firstName nombre parcial (puede ser null)
+     * @param lastName apellido parcial (puede ser null)
+     * @return lista de pacientes que coincidan con los criterios
      */
     @Transactional(readOnly = true)
     public List<PatientResponse> searchByName(String firstName, String lastName) {
         logger.debug("Buscando pacientes por nombre: {} {}", firstName, lastName);
 
-        List<Patient> patients;
-
-        if (firstName != null && lastName != null) {
-            patients = patientRepository.findByFirstNameContainingIgnoreCaseAndLastNameContainingIgnoreCase(firstName, lastName);
-        } else if (firstName != null) {
-            patients = patientRepository.findByFirstNameContainingIgnoreCase(firstName);
-        } else if (lastName != null) {
-            patients = patientRepository.findByLastNameContainingIgnoreCase(lastName);
-        } else {
-            return getAll();
-        }
-
-        return patients.stream()
-                .filter(p -> p.getStatus() == UserStatus.ACTIVE)
-                .map(this::mapToResponse)
-                .toList();
+        // Usar la query flexible que soporta parámetros nulos
+        return patientRepository.searchByFilters(
+                UserStatus.ACTIVE,
+                null,       // sin filtro por DNI
+                firstName,
+                lastName
+            )
+            .stream()
+            .map(this::mapToResponse)
+            .toList();
     }
 
     /**
-     * Desactiva un paciente
+     * Desactiva un paciente (soft delete).
+     * No lo elimina físicamente de la base de datos.
+     * 
+     * @param id ID del paciente a desactivar
+     * @throws ResourceNotFoundException si el ID no existe
      */
     public void deactivate(Long id) {
         logger.info("Desactivando paciente ID={}", id);
@@ -184,11 +244,16 @@ public class PatientService {
         patient.setUpdatedAt(LocalDateTime.now());
         patientRepository.save(patient);
 
-        logger.info("Paciente desactivado: ID={}", id);
+        logger.info("Paciente desactivado: ID={}, DNI={}", id, patient.getDni());
     }
 
+    // ===============================
+    // MÉTODOS PRIVADOS DE CONVERSIÓN
+    // ===============================
+
     /**
-     * Mapea entidad a DTO
+     * Mapea entidad Patient a DTO PatientResponse.
+     * Método privado — la conversión es responsabilidad del Service.
      */
     private PatientResponse mapToResponse(Patient patient) {
         return new PatientResponse(
@@ -208,15 +273,19 @@ public class PatientService {
     }
 
     /**
-     * Parsea una fecha en formato String a LocalDate
+     * Parsea y valida el string de género contra el enum Gender.
+     * 
+     * @param genderStr string del género (ej: "MALE", "male")
+     * @return Gender enum
+     * @throws ValidationException si el valor no es válido
      */
-    private LocalDate parseDate(String dateStr) {
+    private Gender parseGender(String genderStr) {
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE;
-            return LocalDate.parse(dateStr, formatter);
-        } catch (DateTimeParseException e) {
-            logger.error("Error parseando fecha: {}", dateStr);
-            throw new ValidationException("Formato de fecha inválido. Use: yyyy-MM-dd");
+            return Gender.valueOf(genderStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new ValidationException(
+                "Género inválido: '" + genderStr + "'. Valores permitidos: MALE, FEMALE, OTHER"
+            );
         }
     }
 }

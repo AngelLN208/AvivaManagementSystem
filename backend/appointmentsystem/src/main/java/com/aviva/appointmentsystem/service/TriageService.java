@@ -4,20 +4,28 @@ import com.aviva.appointmentsystem.dto.TriageRequest;
 import com.aviva.appointmentsystem.dto.TriageResponse;
 import com.aviva.appointmentsystem.entity.Appointment;
 import com.aviva.appointmentsystem.entity.Triage;
+import com.aviva.appointmentsystem.exception.BusinessRuleException;
 import com.aviva.appointmentsystem.exception.ResourceNotFoundException;
 import com.aviva.appointmentsystem.exception.ValidationException;
 import com.aviva.appointmentsystem.repository.AppointmentRepository;
 import com.aviva.appointmentsystem.repository.TriageRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
 /**
- * Servicio para gestionar triaje (signos vitales)
+ * Servicio para la gestión del triaje (signos vitales) de citas.
+ *
+ * Validaciones en create():
+ * 1. Que la cita exista
+ * 2. Que no exista un triaje previo para esa cita (1 triaje por cita, como 1-to-1)
+ * 3. Que los signos vitales estén dentro de rangos clínicos razonables
+ *    (rangos basados en parámetros médicos estándar)
+ *
+ * Inyección: Constructor injection (no @Autowired).
  */
 @Service
 @Transactional
@@ -25,31 +33,46 @@ public class TriageService {
 
     private static final Logger logger = LoggerFactory.getLogger(TriageService.class);
 
-    @Autowired
-    private TriageRepository triageRepository;
+    private final TriageRepository triageRepository;
+    private final AppointmentRepository appointmentRepository;
 
-    @Autowired
-    private AppointmentRepository appointmentRepository;
+    public TriageService(TriageRepository triageRepository,
+                         AppointmentRepository appointmentRepository) {
+        this.triageRepository = triageRepository;
+        this.appointmentRepository = appointmentRepository;
+    }
 
     /**
-     * Registra los signos vitales (triaje) de una cita
+     * Registra los signos vitales (triaje) para una cita.
+     *
+     * Flujo:
+     * 1. Validar que la cita exista
+     * 2. Validar que no exista triaje previo para esa cita
+     * 3. Validar rangos clínicos de los signos vitales
+     * 4. Persistir el Triage
+     *
+     * @param appointmentId ID de la cita médica
+     * @param request datos vitales del paciente
+     * @return triaje creado
      */
     public TriageResponse create(Long appointmentId, TriageRequest request) {
         logger.info("Registrando triaje para cita ID={}", appointmentId);
 
-        // Validar que la cita exista
+        // 1. Validar que la cita exista
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cita", appointmentId));
 
-        // Validar que no exista un triaje previo
+        // 2. Validar que no exista triaje previo (relación OneToOne)
         if (triageRepository.findByAppointmentId(appointmentId).isPresent()) {
-            throw new ValidationException("Ya existe un registro de triaje para esta cita");
+            throw new BusinessRuleException("TRIAGE_ALREADY_EXISTS",
+                "Ya existe un registro de triaje para la cita ID=" + appointmentId);
         }
 
-        // Validaciones de rangos normales (recomendaciones médicas)
+        // 3. Validar rangos clínicos
         validateVitalSigns(request);
 
-        // Crear triaje
+        // 4. Crear y persistir
+        LocalDateTime now = LocalDateTime.now();
         Triage triage = new Triage();
         triage.setAppointment(appointment);
         triage.setBloodPressureSystolic(request.bloodPressureSystolic());
@@ -60,81 +83,117 @@ public class TriageService {
         triage.setWeight(request.weight());
         triage.setHeight(request.height());
         triage.setNotes(request.notes());
-        triage.setCreatedAt(LocalDateTime.now());
-        triage.setUpdatedAt(LocalDateTime.now());
+        triage.setCreatedAt(now);
+        triage.setUpdatedAt(now);
 
         Triage saved = triageRepository.save(triage);
-        logger.info("Triaje registrado exitosamente: ID={}", saved.getId());
+        logger.info("Triaje registrado: ID={}, cita ID={}", saved.getId(), appointmentId);
 
         return mapToResponse(saved);
     }
 
     /**
-     * Obtiene el triaje de una cita
+     * Obtiene el triaje de una cita por ID de cita.
+     *
+     * @param appointmentId ID de la cita
+     * @throws ResourceNotFoundException si la cita o el triaje no existen
      */
     @Transactional(readOnly = true)
     public TriageResponse getByAppointment(Long appointmentId) {
         logger.debug("Obteniendo triaje de cita ID={}", appointmentId);
 
-        Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cita", appointmentId));
+        if (!appointmentRepository.existsById(appointmentId)) {
+            throw new ResourceNotFoundException("Cita", appointmentId);
+        }
 
         Triage triage = triageRepository.findByAppointmentId(appointmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Triaje no encontrado para cita: " + appointmentId));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "Triaje no encontrado para cita ID: " + appointmentId));
 
         return mapToResponse(triage);
     }
 
+    // ========================================================
+    // VALIDACIONES PRIVADAS
+    // ========================================================
+
     /**
-     * Valida que los signos vitales estén dentro de rangos razonables
+     * Valida que los signos vitales estén dentro de rangos clínicos razonables.
+     *
+     * Rangos utilizados (estándares médicos generales):
+     * - Presión sistólica:    70–200 mmHg
+     * - Presión diastólica:   40–130 mmHg
+     * - Temperatura:          34.0–42.0 °C
+     * - Frecuencia cardíaca:  30–220 lpm
+     * - Frecuencia resp.:      8–60 rpm
+     * - Peso:                  2–500 kg   (neonatos hasta obesidad extrema)
+     * - Altura:               30–250 cm
+     *
+     * Nota: Los rangos del service original (90-180, 60-120) eran demasiado restrictivos
+     * para casos clínicos límite. Se amplían para reducir falsos rechazos.
      */
     private void validateVitalSigns(TriageRequest request) {
-        // Presión arterial sistólica: 90-180 mmHg
-        if (request.bloodPressureSystolic() < 90 || request.bloodPressureSystolic() > 180) {
-            logger.warn("Presión sistólica fuera de rango: {}", request.bloodPressureSystolic());
-            throw new ValidationException("Presión sistólica debe estar entre 90-180 mmHg");
+
+        // Presión sistólica: 70–200 mmHg
+        if (request.bloodPressureSystolic() < 70 || request.bloodPressureSystolic() > 200) {
+            throw new ValidationException(String.format(
+                "Presión sistólica %d fuera de rango válido (70–200 mmHg)",
+                request.bloodPressureSystolic()));
         }
 
-        // Presión arterial diastólica: 60-120 mmHg
-        if (request.bloodPressureDiastolic() < 60 || request.bloodPressureDiastolic() > 120) {
-            logger.warn("Presión diastólica fuera de rango: {}", request.bloodPressureDiastolic());
-            throw new ValidationException("Presión diastólica debe estar entre 60-120 mmHg");
+        // Presión diastólica: 40–130 mmHg
+        if (request.bloodPressureDiastolic() < 40 || request.bloodPressureDiastolic() > 130) {
+            throw new ValidationException(String.format(
+                "Presión diastólica %d fuera de rango válido (40–130 mmHg)",
+                request.bloodPressureDiastolic()));
         }
 
-        // Temperatura: 35-42°C
-        if (request.temperature().doubleValue() < 35 || request.temperature().doubleValue() > 42) {
-            logger.warn("Temperatura fuera de rango: {}", request.temperature());
-            throw new ValidationException("Temperatura debe estar entre 35-42°C");
+        // Sistólica debe ser mayor que diastólica
+        if (request.bloodPressureSystolic() <= request.bloodPressureDiastolic()) {
+            throw new ValidationException(
+                "La presión sistólica debe ser mayor que la diastólica");
         }
 
-        // Frecuencia cardíaca: 40-200 lpm
-        if (request.heartRate() < 40 || request.heartRate() > 200) {
-            logger.warn("Frecuencia cardíaca fuera de rango: {}", request.heartRate());
-            throw new ValidationException("Frecuencia cardíaca debe estar entre 40-200 lpm");
+        // Temperatura: 34.0–42.0 °C
+        if (request.temperature() < 34.0 || request.temperature() > 42.0) {
+            throw new ValidationException(String.format(
+                "Temperatura %.1f °C fuera de rango válido (34.0–42.0 °C)",
+                request.temperature()));
         }
 
-        // Frecuencia respiratoria: 10-50 rpm
-        if (request.respiratoryRate() < 10 || request.respiratoryRate() > 50) {
-            logger.warn("Frecuencia respiratoria fuera de rango: {}", request.respiratoryRate());
-            throw new ValidationException("Frecuencia respiratoria debe estar entre 10-50 rpm");
+        // Frecuencia cardíaca: 30–220 lpm
+        if (request.heartRate() < 30 || request.heartRate() > 220) {
+            throw new ValidationException(String.format(
+                "Frecuencia cardíaca %d fuera de rango válido (30–220 lpm)",
+                request.heartRate()));
         }
 
-        // Peso: 20-300 kg
-        if (request.weight().doubleValue() < 20 || request.weight().doubleValue() > 300) {
-            logger.warn("Peso fuera de rango: {}", request.weight());
-            throw new ValidationException("Peso debe estar entre 20-300 kg");
+        // Frecuencia respiratoria: 8–60 rpm
+        if (request.respiratoryRate() < 8 || request.respiratoryRate() > 60) {
+            throw new ValidationException(String.format(
+                "Frecuencia respiratoria %d fuera de rango válido (8–60 rpm)",
+                request.respiratoryRate()));
         }
 
-        // Altura: 50-220 cm
-        if (request.height().doubleValue() < 50 || request.height().doubleValue() > 220) {
-            logger.warn("Altura fuera de rango: {}", request.height());
-            throw new ValidationException("Altura debe estar entre 50-220 cm");
+        // Peso: 2–500 kg
+        if (request.weight() < 2.0 || request.weight() > 500.0) {
+            throw new ValidationException(String.format(
+                "Peso %.1f fuera de rango válido (2–500 kg)",
+                request.weight()));
+        }
+
+        // Altura: 30–250 cm
+        if (request.height() < 30.0 || request.height() > 250.0) {
+            throw new ValidationException(String.format(
+                "Altura %.1f fuera de rango válido (30–250 cm)",
+                request.height()));
         }
     }
 
-    /**
-     * Mapea entidad a DTO
-     */
+    // ========================================================
+    // MAPEO Entity → DTO
+    // ========================================================
+
     private TriageResponse mapToResponse(Triage triage) {
         return new TriageResponse(
             triage.getId(),

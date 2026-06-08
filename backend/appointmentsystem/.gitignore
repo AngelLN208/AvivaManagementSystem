@@ -37,3 +37,4 @@ build/
 spring.log
 compile_errors.txt
 *.py
+.env

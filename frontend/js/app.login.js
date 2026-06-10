@@ -87,16 +87,16 @@ function parseJwt(token) {
 function redirigir(role) {
 
     if (role === "ADMIN")
-        window.location.href = "/frontend/views/admin/dashboard.html";
+        window.location.href = "../admin/dashboard.html";
 
     else if (role === "RECEPTIONIST")
-        window.location.href = "/frontend/views/recep/index.html";
+        window.location.href = "../recep/index.html";
 
     else if (role === "DOCTOR")
-        window.location.href = "/frontend/views/doctor/doctor.html";
+        window.location.href = "../doctor/doctor.html";
 
     else if (role === "PATIENT")
-        window.location.href = "/frontend/views/patient/patient.html";
+        window.location.href = "../paciente/index.html";
 
     else
         document.getElementById("error").innerText =

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ubícanos - AVIVA</title>
+    <link rel="stylesheet" href="../../css/portal.css">
+    <style>
+        /* Estilos específicos para la página de Ubícanos (Sede Grande) */
+        .page-header {
+            text-align: center;
+            color: white;
+            margin: 40px 0 20px 0;
+        }
+        
+        .page-header h1 {
+            font-size: 2.8rem;
+            color: #38bdf8;
+            margin-bottom: 10px;
+        }
+
+        .page-header p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        .main-location-container {
+            max-width: 1400px; /* Más ancho para el mapa grande */
+            margin: 0 auto 60px auto;
+            padding: 0 20px;
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+
+        .large-map-wrapper {
+            flex: 2; /* El mapa toma más espacio */
+            background-color: #1a2235;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid #2a3553;
+            height: 600px; /* Mapa bien alto */
+        }
+
+        .large-map-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        .info-sidebar {
+            flex: 1; /* Panel de info más estrecho */
+            background-color: #1a2235;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #2a3553;
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .info-sidebar h2 {
+            color: #38bdf8;
+            font-size: 1.8rem;
+            margin-top: 0;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #2a3553;
+            padding-bottom: 10px;
+        }
+
+        .contact-item {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .contact-item strong {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .contact-item span {
+            color: #e2e8f0;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        /* Responsivo para móviles */
+        @media (max-width: 900px) {
+            .main-location-container {
+                flex-direction: column;
+            }
+            .large-map-wrapper {
+                height: 400px;
+                width: 100%;
+            }
+            .info-sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">AVIVA</div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="ubicanos.html" class="active">Ubícanos</a>
+            <a href="agendar.html">Agendar Cita</a>
+        </div>
+    </nav>
+    
+    <div class="page-header">
+        <h1>Ubicación Principal</h1>
+        <p>Te esperamos en nuestra sede central en Los Olivos</p>
+    </div>
+
+    <main class="main-location-container">
+        
+        <div class="large-map-wrapper">
+            <iframe src="https://maps.google.com/maps?q=Clínica+Aviva,+Av.+Alfredo+Mendiola+6301,+Los+Olivos&t=&z=16&ie=UTF8&iwloc=&output=embed" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+
+        <aside class="info-sidebar">
+            <h2>Sede Los Olivos</h2>
+            
+            <div class="contact-item">
+                <strong>Dirección</strong>
+                <span>Av. Alfredo Mendiola 6301, Los Olivos 15301, Lima.</span>
+            </div>
+
+            <div class="contact-item">
+                <strong>Horario de Atención</strong>
+                <span>Atención 24 horas (Emergencias y Hospitalización)</span>
+            </div>
+
+            <div class="contact-item">
+                <strong>Teléfono Central</strong>
+                <span>(01) 7154600</span>
+            </div>
+            
+            <div class="contact-item">
+                <strong>Referencia</strong>
+                <span>Frente al cruce de Av. Alfredo Mendiola con Av. Carlos Izaguirre.</span>
+            </div>
+        </aside>
+
+    </main>
+</body>
+</html>

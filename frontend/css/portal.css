@@ -107,3 +107,201 @@ main {
     border-radius: 12px;
     background-color: #18222d;
 }
+
+.agendar-container {
+    max-width: 1000px;
+}
+
+.filters-section {
+    background-color: #18222d;
+    padding: 25px;
+    border-radius: 12px;
+    border: 1px solid #2a3645;
+    margin-bottom: 40px;
+}
+
+.filter-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+    align-items: flex-end;
+}
+
+.filter-row:last-child {
+    margin-bottom: 0;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.input-group label {
+    color: #a0aec0;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.input-group select,
+.input-group input {
+    background-color: #111820;
+    border: 1px solid #3a4759;
+    color: #ffffff;
+    padding: 10px 15px;
+    border-radius: 6px;
+    outline: none;
+    font-size: 14px;
+}
+
+.input-group select:focus,
+.input-group input:focus {
+    border-color: #20c997;
+}
+
+.search-bar {
+    flex: 1;
+}
+
+.search-bar input {
+    width: 100%;
+}
+
+.btn-primary {
+    background-color: #20c997;
+    color: #111820;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #1aa67d;
+}
+
+.doctors-list {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.doctor-card {
+    background-color: #18222d;
+    border: 1px solid #2a3645;
+    border-radius: 12px;
+    padding: 25px;
+    display: flex;
+    gap: 30px;
+    align-items: stretch;
+}
+
+.doctor-photo {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+    background-color: #2a3645;
+}
+
+.doctor-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.doctor-details h3 {
+    font-size: 20px;
+    margin-bottom: 10px;
+    color: #ffffff;
+}
+
+.specialty-text,
+.sede-text {
+    color: #a0aec0;
+    font-size: 14px;
+    margin-bottom: 6px;
+}
+
+.btn-outline {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 8px 16px;
+    border: 1px solid #3a4759;
+    color: #a0aec0;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 14px;
+    align-self: flex-start;
+    transition: all 0.3s ease;
+}
+
+.btn-outline:hover {
+    border-color: #20c997;
+    color: #ffffff;
+}
+
+.doctor-schedule {
+    width: 350px;
+    border: 1px solid #2a3645;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.schedule-tabs {
+    display: flex;
+    border-bottom: 1px solid #2a3645;
+}
+
+.tab {
+    flex: 1;
+    background: none;
+    border: none;
+    border-right: 1px solid #2a3645;
+    color: #a0aec0;
+    padding: 10px;
+    font-size: 12px;
+    cursor: pointer;
+    background-color: #111820;
+}
+
+.tab:last-child {
+    border-right: none;
+}
+
+.tab.active {
+    background-color: #2a3645;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.time-slots {
+    padding: 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    background-color: #18222d;
+    flex: 1;
+    align-items: center;
+}
+
+.time-btn {
+    text-decoration: none;
+    border: 1px solid #3a4759;
+    color: #ffffff;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.time-btn:hover {
+    border-color: #20c997;
+    background-color: rgba(32, 201, 151, 0.1);
+    color: #20c997;
+}

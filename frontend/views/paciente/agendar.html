@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendar Cita - Aviva</title>
+    <link rel="stylesheet" href="../../css/portal.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">AVIVA</div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="ubicanos.html">Ubícanos</a>
+            <a href="agendar.html" class="active">Agendar Cita</a>
+        </div>
+    </nav>
+    
+    <main class="agendar-container">
+        <section class="filters-section">
+            <div class="filter-row">
+                <div class="input-group">
+                    <label for="sede">Sede:</label>
+                    <select id="sede">
+                        <option value="todas">Todas las sedes</option>
+                        <option value="los-olivos">Los Olivos</option>
+                        <option value="lima-centro">Lima Centro</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="especialidad">Especialidad:</label>
+                    <select id="especialidad">
+                        <option value="todas">Todas las especialidades</option>
+                        <option value="traumatologia">Traumatología</option>
+                        <option value="pediatria">Pediatría</option>
+                        <option value="cardiologia">Cardiología</option>
+                        <option value="gastroenterologia">Gastroenterología</option>
+                        <option value="oftalmologia">Oftalmología</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="filter-row">
+                <div class="input-group flex-grow">
+                    <input type="date" id="fecha-cita">
+                </div>
+                <div class="input-group search-bar">
+                    <input type="text" id="nombre-doctor" placeholder="Buscar por nombre de doctor...">
+                </div>
+            </div>
+        </section>
+
+        <section class="doctors-list" id="lista-doctores">
+            
+            <div class="doctor-card" data-especialidad="traumatologia" data-sede="los-olivos">
+                <img src="../../img/Djorge.png" alt="Foto del doctor" class="doctor-photo">
+                <div class="doctor-details">
+                    <h3 class="doctor-name">Dr. Jorge Medina</h3>
+                    <p class="specialty-text">Especialidad: Traumatología</p>
+                    <p class="sede-text">Sede: Los Olivos</p>
+                    <a href="perfil.html" class="btn-outline">Ver perfil</a>
+                </div>
+                <div class="doctor-schedule">
+                    <div class="schedule-tabs">
+                        <button class="tab active">Lunes 13 Abr</button>
+                        <button class="tab">Martes 14 Abr</button>
+                        <button class="tab">Miércoles 15 Abr</button>
+                    </div>
+                    <div class="time-slots">
+                        <a href="datos.html" class="time-btn">12:30</a>
+                        <a href="datos.html" class="time-btn">15:45</a>
+                        <a href="datos.html" class="time-btn">20:00</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="doctor-card" data-especialidad="pediatria" data-sede="lima-centro">
+                <img src="../../img/Dflores.png" alt="Foto del doctor" class="doctor-photo">
+                <div class="doctor-details">
+                    <h3 class="doctor-name">Dra. Ana Flores</h3>
+                    <p class="specialty-text">Especialidad: Pediatría</p>
+                    <p class="sede-text">Sede: Lima Centro</p>
+                    <a href="perfil.html" class="btn-outline">Ver perfil</a>
+                </div>
+                <div class="doctor-schedule">
+                    <div class="schedule-tabs">
+                        <button class="tab active">Lunes 13 Abr</button>
+                        <button class="tab">Martes 14 Abr</button>
+                        <button class="tab">Miércoles 15 Abr</button>
+                    </div>
+                    <div class="time-slots">
+                        <a href="datos.html" class="time-btn">08:00</a>
+                        <a href="datos.html" class="time-btn">10:30</a>
+                        <a href="datos.html" class="time-btn">14:15</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="doctor-card" data-especialidad="cardiologia" data-sede="lima-centro">
+                <img src="../../img/Dmendoza.jpg" alt="Foto del doctor" class="doctor-photo">
+                <div class="doctor-details">
+                    <h3 class="doctor-name">Dr. Carlos Mendoza</h3>
+                    <p class="specialty-text">Especialidad: Cardiología</p>
+                    <p class="sede-text">Sede: Lima Centro</p>
+                    <a href="perfil.html" class="btn-outline">Ver perfil</a>
+                </div>
+                <div class="doctor-schedule">
+                    <div class="schedule-tabs">
+                        <button class="tab active">Lunes 13 Abr</button>
+                        <button class="tab">Martes 14 Abr</button>
+                        <button class="tab">Miércoles 15 Abr</button>
+                    </div>
+                    <div class="time-slots">
+                        <a href="datos.html" class="time-btn">09:00</a>
+                        <a href="datos.html" class="time-btn">11:00</a>
+                        <a href="datos.html" class="time-btn">16:30</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="doctor-card" data-especialidad="gastroenterologia" data-sede="los-olivos">
+                <img src="../../img/Delena.png" alt="Foto del doctor" class="doctor-photo">
+                <div class="doctor-details">
+                    <h3 class="doctor-name">Dra. Elena Suarez</h3>
+                    <p class="specialty-text">Especialidad: Gastroenterología</p>
+                    <p class="sede-text">Sede: Los Olivos</p>
+                    <a href="perfil.html" class="btn-outline">Ver perfil</a>
+                </div>
+                <div class="doctor-schedule">
+                    <div class="schedule-tabs">
+                        <button class="tab active">Lunes 13 Abr</button>
+                        <button class="tab">Martes 14 Abr</button>
+                        <button class="tab">Miércoles 15 Abr</button>
+                    </div>
+                    <div class="time-slots">
+                        <a href="datos.html" class="time-btn">10:00</a>
+                        <a href="datos.html" class="time-btn">13:15</a>
+                        <a href="datos.html" class="time-btn">18:00</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="doctor-card" data-especialidad="oftalmologia" data-sede="lima-centro">
+                <img src="../../img/Droberto.jpg" alt="Foto del doctor" class="doctor-photo">
+                <div class="doctor-details">
+                    <h3 class="doctor-name">Dr. Roberto Ruiz</h3>
+                    <p class="specialty-text">Especialidad: Oftalmología</p>
+                    <p class="sede-text">Sede: Lima Centro</p>
+                    <a href="perfil.html" class="btn-outline">Ver perfil</a>
+                </div>
+                <div class="doctor-schedule">
+                    <div class="schedule-tabs">
+                        <button class="tab active">Lunes 13 Abr</button>
+                        <button class="tab">Martes 14 Abr</button>
+                        <button class="tab">Miércoles 15 Abr</button>
+                    </div>
+                    <div class="time-slots">
+                        <a href="datos.html" class="time-btn">08:30</a>
+                        <a href="datos.html" class="time-btn">11:45</a>
+                        <a href="datos.html" class="time-btn">15:00</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="doctor-card" data-especialidad="pediatria" data-sede="los-olivos">
+                <img src="../../img/Dsofia.png" alt="Foto del doctor" class="doctor-photo">
+                <div class="doctor-details">
+                    <h3 class="doctor-name">Dra. Sofia Castro</h3>
+                    <p class="specialty-text">Especialidad: Pediatría</p>
+                    <p class="sede-text">Sede: Los Olivos</p>
+                    <a href="perfil.html" class="btn-outline">Ver perfil</a>
+                </div>
+                <div class="doctor-schedule">
+                    <div class="schedule-tabs">
+                        <button class="tab active">Lunes 13 Abr</button>
+                        <button class="tab">Martes 14 Abr</button>
+                        <button class="tab">Miércoles 15 Abr</button>
+                    </div>
+                    <div class="time-slots">
+                        <a href="datos.html" class="time-btn">09:30</a>
+                        <a href="datos.html" class="time-btn">14:00</a>
+                        <a href="datos.html" class="time-btn">17:15</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="doctor-card" data-especialidad="traumatologia" data-sede="lima-centro">
+                <img src="../../img/Dreyes.jpg" alt="Foto del doctor" class="doctor-photo">
+                <div class="doctor-details">
+                    <h3 class="doctor-name">Dr. Miguel Reyes</h3>
+                    <p class="specialty-text">Especialidad: Traumatología</p>
+                    <p class="sede-text">Sede: Lima Centro</p>
+                    <a href="perfil.html" class="btn-outline">Ver perfil</a>
+                </div>
+                <div class="doctor-schedule">
+                    <div class="schedule-tabs">
+                        <button class="tab active">Lunes 13 Abr</button>
+                        <button class="tab">Martes 14 Abr</button>
+                        <button class="tab">Miércoles 15 Abr</button>
+                    </div>
+                    <div class="time-slots">
+                        <a href="datos.html" class="time-btn">11:30</a>
+                        <a href="datos.html" class="time-btn">16:45</a>
+                        <a href="datos.html" class="time-btn">19:00</a>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <script src="../../js/agendar.js"></script>
+</body>
+</html>

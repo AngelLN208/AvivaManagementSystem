@@ -46,3 +46,29 @@ export const ESTADO_MAP = {
   ACTIVE:      { clase: 'fondo-exito-sutil texto-exito',             label: 'Activo' },
   INACTIVE:    { clase: 'fondo-error-sutil texto-error',             label: 'Inactivo' },
 };
+
+export const METODO_PAGO_MAP = {
+  CASH: 'Efectivo',
+  CREDIT_CARD: 'T. Crédito',
+  DEBIT_CARD: 'T. Débito',
+  TRANSFER: 'Transferencia',
+  INSURANCE: 'Seguro',
+};
+
+export const TIPO_NOTIF_MAP = {
+  APPOINTMENT_CREATED: 'Cita creada',
+  APPOINTMENT_RESCHEDULED: 'Cita reprogramada',
+  APPOINTMENT_CANCELLED: 'Cita cancelada',
+  APPOINTMENT_REMINDER: 'Recordatorio',
+  APPOINTMENT_CONFIRMED: 'Cita confirmada',
+  PAYMENT_RECEIVED: 'Pago recibido',
+  PAYMENT_FAILED: 'Fallo en pago',
+  TREATMENT_PLAN: 'Plan de tratamiento',
+};
+
+export const ESTADO_NOTIF_MAP = {
+  PENDING: { clase: 'fondo-advertencia-sutil texto-advertencia', label: 'Pendiente' },
+  SENT: { clase: 'fondo-info-sutil texto-info', label: 'Enviada' },
+  DELIVERED: { clase: 'fondo-exito-sutil texto-exito', label: 'Entregada' },
+  FAILED: { clase: 'fondo-error-sutil texto-error', label: 'Fallida' },
+};

@@ -7,6 +7,7 @@ const items = [
   { to: '/pacientes', icon: 'fa-solid fa-bed-pulse', label: 'Pacientes' },
   { to: '/horario-medicos', icon: 'fa-solid fa-stethoscope', label: 'Horario Médicos' },
   { to: '/pagos', icon: 'fa-solid fa-money-bill-wave', label: 'Pagos' },
+  { to: '/notificaciones', icon: 'fa-solid fa-bell', label: 'Notificaciones' },
 ];
 
 export default function Sidebar({ onClose, abierto }) {
@@ -32,9 +33,6 @@ export default function Sidebar({ onClose, abierto }) {
             <i className={`${item.icon} me-3`}></i> {item.label}
           </NavLink>
         ))}
-        <span className="list-group-item list-group-item-action nav-link-custom rounded-pill opacity-50 pe-none">
-          <i className="fa-solid fa-bell me-3"></i> Notificaciones
-        </span>
       </div>
 
       <div className="px-3 pt-2 pb-3 mt-auto">

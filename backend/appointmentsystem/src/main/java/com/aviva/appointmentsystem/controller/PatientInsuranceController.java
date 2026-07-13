@@ -4,6 +4,8 @@ import com.aviva.appointmentsystem.dto.ApiResponse;
 import com.aviva.appointmentsystem.dto.PatientInsuranceRequest;
 import com.aviva.appointmentsystem.dto.PatientInsuranceResponse;
 import com.aviva.appointmentsystem.service.PatientInsuranceService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +29,8 @@ import java.util.Optional;
  */
 @RestController
 @RequestMapping("/api/patient-insurances")
+@Tag(name = "Seguros de pacientes", description = "Vinculacion de pacientes con sus polizas de seguro")
+@SecurityRequirement(name = "bearerAuth")
 public class PatientInsuranceController {
 
     private static final Logger logger = LoggerFactory.getLogger(PatientInsuranceController.class);

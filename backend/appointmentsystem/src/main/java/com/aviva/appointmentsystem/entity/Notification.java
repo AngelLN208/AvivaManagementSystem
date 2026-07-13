@@ -12,12 +12,13 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 
 /**
  * Entidad para notificaciones del sistema
- * Registra notificaciones enviadas a pacientes y doctores
+ * Registra correos enviados y notificaciones internas para los pacientes.
  * RF-45 a RF-48: Sistema de notificaciones por cambios en citas
  */
 @Entity
@@ -38,7 +39,7 @@ public class Notification {
 
     /**
      * Receptor de la notificación
-     * Puede ser paciente o doctor
+     * Actualmente corresponde al paciente relacionado con la operación.
      */
     @Column(nullable = false, length = 100)
     private String recipientEmail;
@@ -70,7 +71,7 @@ public class Notification {
 
     /**
      * Canal de envío
-     * EMAIL, SMS, IN_APP
+     * EMAIL o IN_APP
      */
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -119,6 +120,7 @@ public class Notification {
      * Se utiliza únicamente para notificaciones del canal IN_APP.
      */
     @Column(name = "is_read", nullable = false)
+    @ColumnDefault("false")
     private Boolean read = false;
 
     /**

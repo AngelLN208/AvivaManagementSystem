@@ -555,14 +555,14 @@ public class AppointmentService {
     }
 
     /**
-     * Crea notificaciones para paciente y doctor.
+     * Crea una notificacion por correo y otra interna para el paciente.
      * Wrapped en try-catch: si falla, NO interrumpe la operación principal.
      */
     private void createAppointmentNotifications(Appointment appointment, String notificationType) {
         try {
             String patientMessage = buildPatientMessage(appointment, notificationType);
-            String doctorMessage  = buildDoctorMessage(appointment, notificationType);
             String subject        = buildNotificationSubject(notificationType);
+            LocalDateTime now      = LocalDateTime.now();
 
             notificationService.createNotification(
                 Notification.NotificationType.valueOf(notificationType),
@@ -572,21 +572,21 @@ public class AppointmentService {
                 subject,
                 patientMessage,
                 Notification.NotificationChannel.EMAIL,
-                LocalDateTime.now()
+                now
             );
 
             notificationService.createNotification(
                 Notification.NotificationType.valueOf(notificationType),
-                appointment.getDoctor().getEmail(),
-                appointment.getDoctor().getFirstName() + " " + appointment.getDoctor().getLastName(),
+                appointment.getPatient().getEmail(),
+                appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName(),
                 appointment,
-                "[Doctor] " + subject,
-                doctorMessage,
-                Notification.NotificationChannel.EMAIL,
-                LocalDateTime.now()
+                subject,
+                patientMessage,
+                Notification.NotificationChannel.IN_APP,
+                now
             );
 
-            logger.info("Notificaciones enviadas para cita ID={}", appointment.getId());
+            logger.info("Notificaciones EMAIL e IN_APP creadas para cita ID={}", appointment.getId());
         } catch (Exception e) {
             logger.error("Error enviando notificaciones para cita ID={}: {}", appointment.getId(), e.getMessage());
         }
@@ -605,28 +605,6 @@ public class AppointmentService {
                 a.getAppointmentDateTime().toLocalTime());
             case "APPOINTMENT_CANCELLED" -> "Tu cita médica ha sido cancelada.";
             default -> "Ha habido un cambio en tu cita médica.";
-        };
-    }
-
-    private String buildDoctorMessage(Appointment a, String type) {
-        return switch (type) {
-            case "APPOINTMENT_CREATED" -> String.format(
-                "Nueva cita con %s %s para el %s a las %s. Motivo: %s",
-                a.getPatient().getFirstName(),
-                a.getPatient().getLastName(),
-                a.getAppointmentDateTime().toLocalDate(),
-                a.getAppointmentDateTime().toLocalTime(),
-                a.getReason() != null ? a.getReason() : "No especificado");
-            case "APPOINTMENT_RESCHEDULED" -> String.format(
-                "La cita con %s ha sido reprogramada para el %s a las %s.",
-                a.getPatient().getFirstName(),
-                a.getAppointmentDateTime().toLocalDate(),
-                a.getAppointmentDateTime().toLocalTime());
-            case "APPOINTMENT_CANCELLED" -> String.format(
-                "La cita con %s %s ha sido cancelada.",
-                a.getPatient().getFirstName(),
-                a.getPatient().getLastName());
-            default -> "Ha habido un cambio en una cita médica.";
         };
     }
 

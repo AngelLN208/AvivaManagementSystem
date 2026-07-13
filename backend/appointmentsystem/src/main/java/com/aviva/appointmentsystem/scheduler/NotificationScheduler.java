@@ -5,6 +5,7 @@ import com.aviva.appointmentsystem.service.EmailSender;
 import com.aviva.appointmentsystem.service.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -17,6 +18,11 @@ import java.util.List;
  * disponibles inmediatamente en la base de datos.
  */
 @Component
+@ConditionalOnProperty(
+        name = "app.notifications.scheduler-enabled",
+        havingValue = "true",
+        matchIfMissing = true
+)
 public class NotificationScheduler {
 
     private static final Logger logger =

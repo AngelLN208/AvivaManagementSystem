@@ -4,10 +4,10 @@ import com.aviva.appointmentsystem.dto.NotificationResponse;
 import com.aviva.appointmentsystem.entity.Appointment;
 import com.aviva.appointmentsystem.entity.Notification;
 import com.aviva.appointmentsystem.exception.ResourceNotFoundException;
+import com.aviva.appointmentsystem.exception.ValidationException;
 import com.aviva.appointmentsystem.repository.NotificationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,14 +24,17 @@ public class NotificationService {
 
     private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
 
-    @Autowired
-    private NotificationRepository notificationRepository;
+    private final NotificationRepository notificationRepository;
+
+    public NotificationService(NotificationRepository notificationRepository) {
+        this.notificationRepository = notificationRepository;
+    }
 
     /**
      * Crea y registra una notificación para un canal específico.
      *
      * Las notificaciones EMAIL se guardan como PENDING para que posteriormente
-     * sean procesadas por el scheduler y enviadas mediante el servidor SMTP.
+     * sean procesadas por el scheduler y enviadas mediante la API HTTPS de Brevo.
      *
      * Las notificaciones IN_APP se guardan como SENT porque quedan disponibles
      * inmediatamente en la base de datos para el portal del paciente.
@@ -89,7 +92,7 @@ public class NotificationService {
         /*
         * Una notificación interna ya está disponible desde el momento en que
         * se guarda. El correo, en cambio, debe esperar a que el scheduler lo
-        * envíe utilizando el servicio SMTP.
+        * envíe utilizando la API de correo de Brevo.
         */
         if (channel == Notification.NotificationChannel.IN_APP) {
             notification.setStatus(Notification.NotificationStatus.SENT);
@@ -120,7 +123,7 @@ public class NotificationService {
     public List<Notification> getPendingNotifications() {
         logger.debug("Obteniendo notificaciones pendientes");
 
-        return notificationRepository.findByScheduledTimeBeforeAndStatus(
+        return notificationRepository.findByScheduledTimeLessThanEqualAndStatusOrderByScheduledTimeAsc(
             LocalDateTime.now(),
             Notification.NotificationStatus.PENDING
         );
@@ -129,7 +132,7 @@ public class NotificationService {
     /**
      * Marca una notificación de correo como enviada correctamente.
      *
-     * Este método se ejecuta después de que el servidor SMTP acepta el correo.
+     * Este método se ejecuta después de que la API de Brevo acepta el correo.
      * No utiliza el estado DELIVERED porque no es posible garantizar que el
      * paciente haya abierto o leído el mensaje.
      *
@@ -195,6 +198,45 @@ public class NotificationService {
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
+    }
+
+    /**
+     * Obtiene solo las notificaciones internas del paciente, ordenadas desde
+     * la mas reciente. Este listado es el que consumira el portal web.
+     */
+    @Transactional(readOnly = true)
+    public List<NotificationResponse> getUserInAppNotifications(String email) {
+        return notificationRepository
+                .findByRecipientEmailAndChannelOrderByCreatedAtDesc(
+                        email,
+                        Notification.NotificationChannel.IN_APP
+                )
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    /**
+     * Marca como leida una notificacion interna. La operacion es idempotente:
+     * una segunda llamada conserva la fecha de la primera lectura.
+     */
+    public NotificationResponse markAsRead(Long notificationId) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notificacion", notificationId));
+
+        if (notification.getChannel() != Notification.NotificationChannel.IN_APP) {
+            throw new ValidationException(
+                    "Solo las notificaciones internas pueden marcarse como leidas"
+            );
+        }
+
+        if (!Boolean.TRUE.equals(notification.getRead())) {
+            notification.setRead(true);
+            notification.setReadAt(LocalDateTime.now());
+            notification = notificationRepository.save(notification);
+        }
+
+        return mapToResponse(notification);
     }
 
     /**

@@ -284,6 +284,7 @@ public class PaymentService {
                 "Tu cita está CONFIRMADA.",
                 appointment.getAppointmentDateTime().toLocalDate(),
                 receiptNumber);
+            LocalDateTime now = LocalDateTime.now();
 
             notificationService.createNotification(
                 Notification.NotificationType.PAYMENT_RECEIVED,
@@ -293,7 +294,18 @@ public class PaymentService {
                 "Pago confirmado — Cita médica",
                 message,
                 Notification.NotificationChannel.EMAIL,
-                LocalDateTime.now()
+                now
+            );
+
+            notificationService.createNotification(
+                Notification.NotificationType.PAYMENT_RECEIVED,
+                appointment.getPatient().getEmail(),
+                appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName(),
+                appointment,
+                "Pago confirmado — Cita médica",
+                message,
+                Notification.NotificationChannel.IN_APP,
+                now
             );
         } catch (Exception e) {
             logger.error("Error notificando pago confirmado para cita ID={}: {}",

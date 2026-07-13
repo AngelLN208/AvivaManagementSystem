@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { logout } from '../../utils/helpers';
+import { useAuth } from '../../context/AuthContext';
 
 const items = [
   { to: '/', icon: 'fa-solid fa-border-all', label: 'Panel Principal' },
@@ -11,6 +11,8 @@ const items = [
 ];
 
 export default function Sidebar({ onClose, abierto }) {
+  const { logout } = useAuth();
+
   return (
     <aside className={`sidebar shadow-sm ${abierto ? 'menu-abierto' : ''}`} id="sidebar-wrapper">
       <div className="sidebar-heading d-flex align-items-center justify-content-between px-3">

@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { useNotificaciones } from '../../hooks/useNotificaciones';
-import { getIniciales, logout } from '../../utils/helpers';
+import { useAuth } from '../../context/AuthContext';
+import { getIniciales } from '../../utils/helpers';
 
 export default function Navbar({ onToggleSidebar }) {
   const { tema, toggleTema } = useTheme();
   const { noLeidas, marcarLeida, marcarTodasLeidas } = useNotificaciones();
+  const { logout } = useAuth();
   const [panelAbierto, setPanelAbierto] = useState(false);
   const panelRef = useRef(null);
 

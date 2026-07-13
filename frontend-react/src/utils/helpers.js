@@ -7,9 +7,6 @@ export function getIniciales(nombre) {
     .toUpperCase();
 }
 
-export function logout() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('role');
-  localStorage.removeItem('username');
-  window.location.href = '/login'; // ajustamos la ruta cuando migremos login
+export function parseJwt(token) {
+  return JSON.parse(atob(token.split('.')[1]));
 }

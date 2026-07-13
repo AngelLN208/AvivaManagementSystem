@@ -15,6 +15,8 @@ public record NotificationResponse(
     String message,
     String channel,
     String status,
+    Boolean read,
+    LocalDateTime readAt,
     Integer retryCount,
     String errorMessage,
     LocalDateTime scheduledTime,

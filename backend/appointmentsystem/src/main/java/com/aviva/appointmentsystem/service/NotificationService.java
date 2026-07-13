@@ -28,8 +28,23 @@ public class NotificationService {
     private NotificationRepository notificationRepository;
 
     /**
-     * Crea una notificación pendiente
-     * Se programa para envío asincrónico
+     * Crea y registra una notificación para un canal específico.
+     *
+     * Las notificaciones EMAIL se guardan como PENDING para que posteriormente
+     * sean procesadas por el scheduler y enviadas mediante el servidor SMTP.
+     *
+     * Las notificaciones IN_APP se guardan como SENT porque quedan disponibles
+     * inmediatamente en la base de datos para el portal del paciente.
+     *
+     * @param type tipo de evento que originó la notificación
+     * @param recipientEmail correo del paciente destinatario
+     * @param recipientName nombre completo del paciente
+     * @param appointment cita relacionada con la notificación
+     * @param subject asunto que se mostrará en el correo o portal
+     * @param message contenido de la notificación
+     * @param channel canal por el que se entregará la notificación
+     * @param scheduledTime fecha y hora programada para su procesamiento
+     * @return información de la notificación registrada
      */
     public NotificationResponse createNotification(
             Notification.NotificationType type,
@@ -39,9 +54,16 @@ public class NotificationService {
             String subject,
             String message,
             Notification.NotificationChannel channel,
-            LocalDateTime scheduledTime) {
+            LocalDateTime scheduledTime
+    ) {
+        logger.info(
+                "Creando notificación: tipo={}, canal={}, destinatario={}",
+                type,
+                channel,
+                recipientEmail
+        );
 
-        logger.info("Creando notificación: tipo={}, destinatario={}", type, recipientEmail);
+        LocalDateTime now = LocalDateTime.now();
 
         Notification notification = new Notification();
         notification.setType(type);
@@ -51,14 +73,43 @@ public class NotificationService {
         notification.setSubject(subject);
         notification.setMessage(message);
         notification.setChannel(channel);
-        notification.setStatus(Notification.NotificationStatus.PENDING);
-        notification.setScheduledTime(scheduledTime);
         notification.setRetryCount(0);
+        notification.setErrorMessage(null);
+        notification.setRead(false);
+        notification.setReadAt(null);
 
-        Notification saved = notificationRepository.save(notification);
-        logger.info("Notificación creada: ID={}", saved.getId());
+        /*
+        * scheduledTime no puede ser nulo en la entidad. Cuando el llamador no
+        * proporciona una fecha, la notificación se programa inmediatamente.
+        */
+        notification.setScheduledTime(
+                scheduledTime != null ? scheduledTime : now
+        );
 
-        return mapToResponse(saved);
+        /*
+        * Una notificación interna ya está disponible desde el momento en que
+        * se guarda. El correo, en cambio, debe esperar a que el scheduler lo
+        * envíe utilizando el servicio SMTP.
+        */
+        if (channel == Notification.NotificationChannel.IN_APP) {
+            notification.setStatus(Notification.NotificationStatus.SENT);
+            notification.setSentTime(now);
+        } else {
+            notification.setStatus(Notification.NotificationStatus.PENDING);
+            notification.setSentTime(null);
+        }
+
+        Notification savedNotification =
+                notificationRepository.save(notification);
+
+        logger.info(
+                "Notificación creada: ID={}, estado={}, canal={}",
+                savedNotification.getId(),
+                savedNotification.getStatus(),
+                savedNotification.getChannel()
+        );
+
+        return mapToResponse(savedNotification);
     }
 
     /**
@@ -76,20 +127,39 @@ public class NotificationService {
     }
 
     /**
-     * Marca una notificación como enviada
+     * Marca una notificación de correo como enviada correctamente.
+     *
+     * Este método se ejecuta después de que el servidor SMTP acepta el correo.
+     * No utiliza el estado DELIVERED porque no es posible garantizar que el
+     * paciente haya abierto o leído el mensaje.
+     *
+     * @param notificationId identificador de la notificación enviada
      */
     public void markAsSent(Long notificationId) {
-        logger.info("Marcando notificación como enviada: ID={}", notificationId);
+        logger.info(
+                "Marcando notificación como enviada: ID={}",
+                notificationId
+        );
 
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Notificación", notificationId));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Notificación",
+                                notificationId
+                        )
+                );
 
-        notification.setStatus(Notification.NotificationStatus.DELIVERED);
+        notification.setStatus(Notification.NotificationStatus.SENT);
         notification.setSentTime(LocalDateTime.now());
-        notification.setUpdatedAt(LocalDateTime.now());
+        notification.setErrorMessage(null);
+
         notificationRepository.save(notification);
 
-        logger.info("Notificación marcada como enviada: ID={}", notificationId);
+        logger.info(
+                "Notificación marcada como enviada: ID={}, fecha={}",
+                notificationId,
+                notification.getSentTime()
+        );
     }
 
     /**
@@ -154,12 +224,15 @@ public class NotificationService {
             notification.getMessage(),
             notification.getChannel().name(),
             notification.getStatus().name(),
+            notification.getRead(),
+            notification.getReadAt(),
             notification.getRetryCount(),
             notification.getErrorMessage(),
             notification.getScheduledTime(),
             notification.getSentTime(),
             notification.getCreatedAt(),
             notification.getUpdatedAt()
+            
         );
     }
 }

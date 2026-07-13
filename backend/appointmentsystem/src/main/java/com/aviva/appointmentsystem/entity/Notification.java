@@ -114,6 +114,20 @@ public class Notification {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    /**
+     * Indica si el paciente ya abrió la notificación interna.
+     * Se utiliza únicamente para notificaciones del canal IN_APP.
+     */
+    @Column(name = "is_read", nullable = false)
+    private Boolean read = false;
+
+    /**
+     * Fecha y hora en la que el paciente leyó la notificación.
+     * Permanece nula mientras no haya sido abierta.
+     */
+    @Column(name = "read_at")
+    private LocalDateTime readAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -171,6 +185,22 @@ public class Notification {
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
+    public Boolean getRead() {
+        return read;
+    }
+
+    public void setRead(Boolean read) {
+        this.read = read;
+    }
+
+    public LocalDateTime getReadAt() {
+        return readAt;
+    }
+
+    public void setReadAt(LocalDateTime readAt) {
+        this.readAt = readAt;
+    }       
+
     /**
      * Enumeración para tipos de notificación
      */
@@ -180,6 +210,7 @@ public class Notification {
         APPOINTMENT_CANCELLED("Cita cancelada"),
         APPOINTMENT_REMINDER("Recordatorio de cita"),
         APPOINTMENT_CONFIRMED("Cita confirmada"),
+        APPOINTMENT_UPDATED("Cita modificada"),
         PAYMENT_RECEIVED("Pago recibido"),
         PAYMENT_FAILED("Fallo en pago"),
         TREATMENT_PLAN("Plan de tratamiento");
@@ -200,7 +231,6 @@ public class Notification {
      */
     public enum NotificationChannel {
         EMAIL,
-        SMS,
         IN_APP
     }
 

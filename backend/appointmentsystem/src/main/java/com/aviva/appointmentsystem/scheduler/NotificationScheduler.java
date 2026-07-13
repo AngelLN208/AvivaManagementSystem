@@ -1,210 +1,108 @@
 package com.aviva.appointmentsystem.scheduler;
 
 import com.aviva.appointmentsystem.entity.Notification;
+import com.aviva.appointmentsystem.service.EmailSender;
 import com.aviva.appointmentsystem.service.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 /**
- * Scheduler para envío asincrónico de notificaciones
- * RF-45 a RF-48: Sistema de notificaciones automáticas
- * Cada minuto verifica si hay notificaciones pendientes para enviar
+ * Procesa periódicamente las notificaciones de correo pendientes.
+ *
+ * Las notificaciones internas no pasan por este scheduler porque quedan
+ * disponibles inmediatamente en la base de datos.
  */
 @Component
 public class NotificationScheduler {
 
-    private static final Logger logger = LoggerFactory.getLogger(NotificationScheduler.class);
+    private static final Logger logger =
+            LoggerFactory.getLogger(NotificationScheduler.class);
 
-    @Autowired
-    private NotificationService notificationService;
+    private final NotificationService notificationService;
+    private final EmailSender emailSender;
+
+    public NotificationScheduler(
+            NotificationService notificationService,
+            EmailSender emailSender
+    ) {
+        this.notificationService = notificationService;
+        this.emailSender = emailSender;
+    }
 
     /**
-     * Procesa notificaciones pendientes cada minuto
-     * @Scheduled(fixedRate = 60000) = cada 60 segundos
+     * Busca correos pendientes cada minuto.
+     *
+     * fixedDelay espera un minuto después de terminar la ejecución anterior,
+     * evitando que dos ejecuciones del mismo proceso se superpongan.
      */
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(
+        fixedDelayString =
+            "${app.notifications.processing-delay-ms:60000}"
+    )
     public void processPendingNotifications() {
-        logger.debug("Iniciando procesamiento de notificaciones pendientes...");
+        List<Notification> pendingNotifications =
+                notificationService.getPendingNotifications();
 
-        try {
-            List<Notification> pendingNotifications = notificationService.getPendingNotifications();
+        if (pendingNotifications.isEmpty()) {
+            logger.debug("No hay correos pendientes");
+            return;
+        }
 
-            if (pendingNotifications.isEmpty()) {
-                logger.debug("No hay notificaciones pendientes para enviar");
-                return;
-            }
+        logger.info(
+                "Procesando {} correos pendientes",
+                pendingNotifications.size()
+        );
 
-            logger.info("Procesando {} notificaciones pendientes", pendingNotifications.size());
-
-            for (Notification notification : pendingNotifications) {
-                processNotification(notification);
-            }
-
-        } catch (Exception e) {
-            logger.error("Error al procesar notificaciones pendientes", e);
+        for (Notification notification : pendingNotifications) {
+            processNotification(notification);
         }
     }
 
     /**
-     * Procesa una notificación individual
+     * Envía una notificación de correo individual y actualiza su estado.
      */
     private void processNotification(Notification notification) {
-        logger.info("Enviando notificación: ID={}, tipo={}, canal={}", 
-            notification.getId(), 
-            notification.getType(), 
-            notification.getChannel());
+        if (notification.getChannel()
+                != Notification.NotificationChannel.EMAIL) {
+            logger.warn(
+                    "Notificación pendiente con canal no procesable: ID={}",
+                    notification.getId()
+            );
+            return;
+        }
 
         try {
-            // Simular envío según canal
-            switch (notification.getChannel()) {
-                case EMAIL:
-                    sendEmailNotification(notification);
-                    break;
-                case SMS:
-                    sendSmsNotification(notification);
-                    break;
-                case IN_APP:
-                    sendInAppNotification(notification);
-                    break;
-                default:
-                    logger.warn("Canal desconocido: {}", notification.getChannel());
-                    notificationService.markAsFailed(notification.getId(), "Canal desconocido");
-                    return;
-            }
+            emailSender.send(
+                    notification.getRecipientEmail(),
+                    notification.getSubject(),
+                    notification.getMessage()
+            );
 
             notificationService.markAsSent(notification.getId());
-            logger.info("Notificación enviada exitosamente: ID={}", notification.getId());
 
-        } catch (Exception e) {
-            logger.error("Error al enviar notificación: ID={}", notification.getId(), e);
-            notificationService.markAsFailed(notification.getId(), e.getMessage());
-        }
-    }
+            logger.info(
+                    "Correo enviado correctamente: ID={}",
+                    notification.getId()
+            );
+        } catch (Exception exception) {
+            String errorMessage = exception.getMessage() != null
+                    ? exception.getMessage()
+                    : exception.getClass().getSimpleName();
 
-    /**
-     * Simula envío de email
-     * En producción, integrar con servicio como SendGrid, AWS SES, etc.
-     */
-    private void sendEmailNotification(Notification notification) {
-        logger.debug("Enviando email a: {} | Asunto: {}", 
-            notification.getRecipientEmail(), 
-            notification.getSubject());
+            logger.error(
+                    "No se pudo enviar el correo: ID={}",
+                    notification.getId(),
+                    exception
+            );
 
-        // TODO: Integrar con servidor de correo real
-        // Placeholder: simular envío exitoso
-        try {
-            Thread.sleep(100); // Simular delay de envío
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.error("Interrupción al enviar email", e);
-        }
-    }
-
-    /**
-     * Simula envío de SMS
-     * En producción, integrar con servicio como Twilio, AWS SNS, etc.
-     */
-    private void sendSmsNotification(Notification notification) {
-        logger.debug("Enviando SMS a: {} | Mensaje: {}", 
-            notification.getRecipientEmail(), 
-            notification.getMessage());
-
-        // TODO: Integrar con proveedor de SMS
-        // Placeholder: simular envío exitoso
-        try {
-            Thread.sleep(100); // Simular delay de envío
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.error("Interrupción al enviar SMS", e);
-        }
-    }
-
-    /**
-     * Registra notificación in-app
-     * En producción, puede enviarse al cliente vía WebSocket
-     */
-    private void sendInAppNotification(Notification notification) {
-        logger.debug("Registrando notificación in-app para: {} | Mensaje: {}", 
-            notification.getRecipientEmail(), 
-            notification.getMessage());
-
-        // TODO: Enviar a través de WebSocket si está conectado
-        // Placeholder: simular almacenamiento
-        try {
-            Thread.sleep(50); // Simular delay de procesamiento
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.error("Interrupción al enviar notificación in-app", e);
-        }
-    }
-
-    /**
-     * Recordatorio diario para citas del día siguiente
-     * Se ejecuta a las 6 PM todos los días
-     * Busca citas confirmadas para mañana y envía reminders
-     */
-    @Scheduled(cron = "0 0 18 * * *") // 6 PM diariamente
-    public void sendAppointmentReminders() {
-        logger.info("Iniciando envío de recordatorios de citas para mañana...");
-
-        try {
-            // TODO: Implementar lógica para:
-            // 1. Buscar citas confirmadas para mañana
-            // 2. Crear notificaciones de tipo APPOINTMENT_REMINDER
-            // 3. Programarlas para envío inmediato
-
-            logger.info("Recordatorios de citas enviados exitosamente");
-
-        } catch (Exception e) {
-            logger.error("Error al enviar recordatorios de citas", e);
-        }
-    }
-
-    /**
-     * Limpieza de notificaciones fallidas
-     * Se ejecuta cada hora
-     * Reintenta notificaciones que fallaron
-     */
-    @Scheduled(fixedRate = 3600000) // Cada 1 hora
-    public void retryFailedNotifications() {
-        logger.info("Iniciando reintento de notificaciones fallidas...");
-
-        try {
-            // TODO: Implementar lógica para:
-            // 1. Buscar notificaciones FAILED con retryCount < 3
-            // 2. Cambiar estado a PENDING para reintento
-            // 3. Incrementar retry count
-
-            logger.info("Reintento de notificaciones completado");
-
-        } catch (Exception e) {
-            logger.error("Error al reintentar notificaciones", e);
-        }
-    }
-
-    /**
-     * Limpieza de notificaciones antiguas
-     * Se ejecuta cada 7 días
-     * Elimina notificaciones más antiguas de 30 días
-     */
-    @Scheduled(cron = "0 0 0 * * SUN") // Cada domingo a medianoche
-    public void cleanupOldNotifications() {
-        logger.info("Limpiando notificaciones antiguas...");
-
-        try {
-            // TODO: Implementar lógica para:
-            // 1. Buscar notificaciones creadas hace > 30 días
-            // 2. Eliminarlas de la base de datos
-
-            logger.info("Limpieza de notificaciones completada");
-
-        } catch (Exception e) {
-            logger.error("Error al limpiar notificaciones antiguas", e);
+            notificationService.markAsFailed(
+                    notification.getId(),
+                    errorMessage
+            );
         }
     }
 }

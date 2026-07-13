@@ -4,6 +4,7 @@ import com.aviva.appointmentsystem.dto.AppointmentRequest;
 import com.aviva.appointmentsystem.dto.AppointmentResponse;
 import com.aviva.appointmentsystem.dto.AvailableSlotResponse;
 import com.aviva.appointmentsystem.dto.DoctorResponse;
+import com.aviva.appointmentsystem.dto.InsuranceCoverageResult;
 import com.aviva.appointmentsystem.dto.PatientResponse;
 import com.aviva.appointmentsystem.dto.SpecialtyResponse;
 import com.aviva.appointmentsystem.entity.Appointment;
@@ -13,6 +14,7 @@ import com.aviva.appointmentsystem.entity.Doctor;
 import com.aviva.appointmentsystem.entity.MedicalSchedule;
 import com.aviva.appointmentsystem.entity.Notification;
 import com.aviva.appointmentsystem.entity.Patient;
+import com.aviva.appointmentsystem.entity.PatientInsurance;
 import com.aviva.appointmentsystem.entity.Payment;
 import com.aviva.appointmentsystem.entity.PaymentMethod;
 import com.aviva.appointmentsystem.entity.PaymentStatus;
@@ -23,6 +25,7 @@ import com.aviva.appointmentsystem.repository.AppointmentRepository;
 import com.aviva.appointmentsystem.repository.AuditLogRepository;
 import com.aviva.appointmentsystem.repository.DoctorRepository;
 import com.aviva.appointmentsystem.repository.MedicalScheduleRepository;
+import com.aviva.appointmentsystem.repository.PatientInsuranceRepository;
 import com.aviva.appointmentsystem.repository.PatientRepository;
 import com.aviva.appointmentsystem.repository.PaymentRepository;
 import org.slf4j.Logger;
@@ -69,6 +72,8 @@ public class AppointmentService {
     private final PaymentRepository paymentRepository;
     private final AuditLogRepository auditLogRepository;
     private final NotificationService notificationService;
+    private final PatientInsuranceRepository patientInsuranceRepository;
+    private final InsuranceCoverageCalculator insuranceCoverageCalculator;
 
     public AppointmentService(AppointmentRepository appointmentRepository,
                               PatientRepository patientRepository,
@@ -76,7 +81,9 @@ public class AppointmentService {
                               MedicalScheduleRepository medicalScheduleRepository,
                               PaymentRepository paymentRepository,
                               AuditLogRepository auditLogRepository,
-                              NotificationService notificationService) {
+                              NotificationService notificationService,
+                              PatientInsuranceRepository patientInsuranceRepository,
+                              InsuranceCoverageCalculator insuranceCoverageCalculator) {
         this.appointmentRepository = appointmentRepository;
         this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
@@ -84,6 +91,8 @@ public class AppointmentService {
         this.paymentRepository = paymentRepository;
         this.auditLogRepository = auditLogRepository;
         this.notificationService = notificationService;
+        this.patientInsuranceRepository = patientInsuranceRepository;
+        this.insuranceCoverageCalculator = insuranceCoverageCalculator;
     }
 
     // ========================================================
@@ -463,20 +472,68 @@ public class AppointmentService {
      * Monto base: S/. 100.00 (configurable en futuras versiones).
      * Método de pago inicial: CASH (puede actualizarse en el módulo de Pagos).
      */
+    /**
+     * Crea el pago pendiente asociado a una cita.
+     *
+     * Si el paciente tiene una afiliacion primaria activa y vigente, calcula
+     * la parte cubierta por la aseguradora. En caso contrario, la consulta
+     * se registra como particular y el paciente asume el monto completo.
+     *
+     * Este metodo no incrementa el consumo anual. El consumo se actualiza
+     * solamente cuando PaymentService confirma el pago.
+     *
+     * @param appointment cita para la que se generara el pago
+     */
     private void createPaymentForAppointment(Appointment appointment) {
         LocalDateTime now = LocalDateTime.now();
+        BigDecimal baseAmount = new BigDecimal("100.00");
 
         Payment payment = new Payment();
         payment.setAppointment(appointment);
-        payment.setAmount(new BigDecimal("100.00"));
+        payment.setBaseAmount(baseAmount);
         payment.setStatus(PaymentStatus.PENDING);
         payment.setMethod(PaymentMethod.CASH);
-        payment.setDescription("Pago generado automáticamente por cita médica ID=" + appointment.getId());
         payment.setCreatedAt(now);
         payment.setUpdatedAt(now);
 
+        PatientInsurance policy = patientInsuranceRepository
+                .findValidPrimaryInsurance(appointment.getPatient(), now)
+                .orElse(null);
+
+        if (policy != null) {
+            // Calcular el desglose utilizando las condiciones del plan.
+            InsuranceCoverageResult result =
+                    insuranceCoverageCalculator.calculate(baseAmount, policy);
+
+            payment.setDeductibleApplied(result.deductibleApplied());
+            payment.setInsuranceCoveredAmount(
+                    result.insuranceCoveredAmount());
+            payment.setAmount(result.patientAmount());
+            payment.setPatientInsurance(policy);
+
+            payment.setDescription(
+                    "Pago con seguro " + policy.getInsurance().getName() +
+                    " para cita ID=" + appointment.getId());
+        } else {
+            // Atención particular: el paciente cubre todo el costo.
+            payment.setDeductibleApplied(BigDecimal.ZERO);
+            payment.setInsuranceCoveredAmount(BigDecimal.ZERO);
+            payment.setAmount(baseAmount);
+            payment.setPatientInsurance(null);
+
+            payment.setDescription(
+                    "Pago particular para cita ID=" + appointment.getId());
+        }
+
         paymentRepository.save(payment);
-        logger.info("RN-21: Payment PENDING creado para cita ID={}", appointment.getId());
+
+        logger.info(
+                "Payment PENDING creado: cita={}, base={}, seguro={}, paciente={}",
+                appointment.getId(),
+                payment.getBaseAmount(),
+                payment.getInsuranceCoveredAmount(),
+                payment.getAmount()
+        );
     }
 
     /**

@@ -12,6 +12,7 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -35,6 +36,9 @@ public class PatientInsurance {
     @ManyToOne(optional = false)
     @JoinColumn(name = "insurance_id", nullable = false)
     private Insurance insurance;
+    
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal usedAnnualCoverage = BigDecimal.ZERO;
 
     /**
      * Número de póliza del paciente
@@ -136,4 +140,7 @@ public class PatientInsurance {
     
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+        
+    public BigDecimal getUsedAnnualCoverage() { return usedAnnualCoverage; }
+    public void setUsedAnnualCoverage(BigDecimal usedAnnualCoverage) { this.usedAnnualCoverage = usedAnnualCoverage; }
 }

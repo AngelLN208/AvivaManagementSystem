@@ -165,7 +165,6 @@ Se han implementado **32 endpoints REST** siguiendo arquitectura limpia con capa
 - `deductible` - Deducible por consulta
 - `maxCoveragePerConsultation` - Máximo cubierto por consulta
 - `maxAnnualCoverage` - Cobertura máxima anual
-- `requiresPreAuthorization` - ¿Requiere pre-autorización?
 
 ---
 

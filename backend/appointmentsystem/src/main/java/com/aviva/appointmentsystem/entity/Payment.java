@@ -52,6 +52,32 @@ public class Payment {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    /**
+     * Precio original de la consulta antes de aplicar el seguro.
+     */
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal baseAmount;
+
+    /**
+     * Deducible aplicado al paciente durante el cálculo.
+     */
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal deductibleApplied;
+
+    /**
+     * Parte del costo cubierta por la aseguradora.
+     */
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal insuranceCoveredAmount;
+
+    /**
+     * Afiliación utilizada para calcular la cobertura.
+     * Será null cuando el paciente se atienda de forma particular.
+     */
+    @ManyToOne
+    @JoinColumn(name = "patient_insurance_id")
+    private PatientInsurance patientInsurance;
+
     // ===============================
     // GETTERS Y SETTERS
     // ===============================
@@ -82,4 +108,36 @@ public class Payment {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public BigDecimal getBaseAmount() {
+    return baseAmount;
+    }
+
+    public void setBaseAmount(BigDecimal baseAmount) {
+        this.baseAmount = baseAmount;
+    }
+
+    public BigDecimal getDeductibleApplied() {
+        return deductibleApplied;
+    }
+
+    public void setDeductibleApplied(BigDecimal deductibleApplied) {
+        this.deductibleApplied = deductibleApplied;
+    }
+
+    public BigDecimal getInsuranceCoveredAmount() {
+        return insuranceCoveredAmount;
+    }
+
+    public void setInsuranceCoveredAmount(BigDecimal insuranceCoveredAmount) {
+        this.insuranceCoveredAmount = insuranceCoveredAmount;
+    }
+
+    public PatientInsurance getPatientInsurance() {
+        return patientInsurance;
+    }
+
+    public void setPatientInsurance(PatientInsurance patientInsurance) {
+        this.patientInsurance = patientInsurance;
+    }
 }

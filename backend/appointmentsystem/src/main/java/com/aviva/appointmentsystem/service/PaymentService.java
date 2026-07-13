@@ -5,6 +5,7 @@ import com.aviva.appointmentsystem.entity.Appointment;
 import com.aviva.appointmentsystem.entity.AppointmentStatus;
 import com.aviva.appointmentsystem.entity.AuditLog;
 import com.aviva.appointmentsystem.entity.Notification;
+import com.aviva.appointmentsystem.entity.PatientInsurance;
 import com.aviva.appointmentsystem.entity.Payment;
 import com.aviva.appointmentsystem.entity.PaymentMethod;
 import com.aviva.appointmentsystem.entity.PaymentStatus;
@@ -13,6 +14,7 @@ import com.aviva.appointmentsystem.exception.BusinessRuleException;
 import com.aviva.appointmentsystem.exception.ResourceNotFoundException;
 import com.aviva.appointmentsystem.repository.AppointmentRepository;
 import com.aviva.appointmentsystem.repository.AuditLogRepository;
+import com.aviva.appointmentsystem.repository.PatientInsuranceRepository;
 import com.aviva.appointmentsystem.repository.PaymentRepository;
 import com.aviva.appointmentsystem.repository.ReceiptRepository;
 import org.slf4j.Logger;
@@ -54,17 +56,22 @@ public class PaymentService {
     private final AppointmentRepository appointmentRepository;
     private final AuditLogRepository auditLogRepository;
     private final NotificationService notificationService;
+    private final PatientInsuranceRepository patientInsuranceRepository;
 
-    public PaymentService(PaymentRepository paymentRepository,
-                          ReceiptRepository receiptRepository,
-                          AppointmentRepository appointmentRepository,
-                          AuditLogRepository auditLogRepository,
-                          NotificationService notificationService) {
+    public PaymentService(
+            PaymentRepository paymentRepository,
+            ReceiptRepository receiptRepository,
+            AppointmentRepository appointmentRepository,
+            AuditLogRepository auditLogRepository,
+            NotificationService notificationService,
+            PatientInsuranceRepository patientInsuranceRepository) {
+
         this.paymentRepository = paymentRepository;
         this.receiptRepository = receiptRepository;
         this.appointmentRepository = appointmentRepository;
         this.auditLogRepository = auditLogRepository;
         this.notificationService = notificationService;
+        this.patientInsuranceRepository = patientInsuranceRepository;
     }
 
     // ========================================================
@@ -109,6 +116,8 @@ public class PaymentService {
         payment.setPaymentDate(now);
         payment.setUpdatedAt(now);
         Payment savedPayment = paymentRepository.save(payment);
+        // Registrar el consumo del seguro después de confirmar el pago.
+        updateAnnualInsuranceCoverage(savedPayment, now);
         logger.info("RN-26: Pago ID={} marcado como PAID", paymentId);
 
         // 4. RN-16: Confirmar la cita asociada → CONFIRMED
@@ -214,6 +223,38 @@ public class PaymentService {
     }
 
     /**
+     * Registra en la afiliacion del paciente el monto cubierto por el seguro.
+     *
+     * No realiza ninguna operacion cuando la cita fue particular o cuando
+     * la aseguradora no cubrio parte del costo.
+     *
+     * @param payment pago confirmado que contiene el desglose de cobertura
+     * @param updateTime momento en que se registra el consumo
+     */
+    private void updateAnnualInsuranceCoverage(
+            Payment payment,
+            LocalDateTime updateTime) {
+
+        PatientInsurance policy = payment.getPatientInsurance();
+        BigDecimal coveredAmount = payment.getInsuranceCoveredAmount();
+
+        if (policy == null ||
+                coveredAmount == null ||
+                coveredAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+
+        BigDecimal currentUsage = policy.getUsedAnnualCoverage() != null
+                ? policy.getUsedAnnualCoverage()
+                : BigDecimal.ZERO;
+
+        policy.setUsedAnnualCoverage(currentUsage.add(coveredAmount));
+        policy.setUpdatedAt(updateTime);
+
+        patientInsuranceRepository.save(policy);
+    }
+
+    /**
      * Registra un evento en el log de auditoría de la cita.
      * Wrapped en try-catch: una falla de auditoría no debe revertir el pago.
      */
@@ -269,16 +310,25 @@ public class PaymentService {
      * NUNCA devuelve la entidad Payment directamente.
      */
     private PaymentResponse mapToResponse(Payment payment) {
+        PatientInsurance policy = payment.getPatientInsurance();
+
         return new PaymentResponse(
             payment.getId(),
+            payment.getBaseAmount(),
+            payment.getDeductibleApplied(),
+            payment.getInsuranceCoveredAmount(),
             payment.getAmount(),
+            policy != null ? policy.getId() : null,
+            policy != null ? policy.getInsurance().getName() : null,
             payment.getStatus().name(),
             payment.getMethod() != null ? payment.getMethod().name() : null,
             payment.getDescription(),
             payment.getPaymentDate(),
             payment.getCreatedAt(),
             payment.getUpdatedAt(),
-            payment.getAppointment() != null ? payment.getAppointment().getId() : null
+            payment.getAppointment() != null
+                    ? payment.getAppointment().getId()
+                    : null
         );
     }
 }

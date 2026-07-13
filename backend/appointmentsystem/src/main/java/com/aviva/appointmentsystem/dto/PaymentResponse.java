@@ -21,7 +21,12 @@ public record PaymentResponse(
 
 public record PaymentResponse(
     Long id,
+    BigDecimal baseAmount,
+    BigDecimal deductibleApplied,
+    BigDecimal insuranceCoveredAmount,
     BigDecimal amount,
+    Long patientInsuranceId,
+    String insuranceName,
     String status,
     String method,
     String description,

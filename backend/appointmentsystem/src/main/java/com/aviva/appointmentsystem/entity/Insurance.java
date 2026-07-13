@@ -44,13 +44,7 @@ public class Insurance {
     private BigDecimal maxAnnualCoverage;
 
     @Column(nullable = false)
-    private BigDecimal usedAnnualCoverage = BigDecimal.ZERO;
-
-    @Column(nullable = false)
     private Boolean active = true;
-
-    @Column(nullable = false)
-    private Boolean requiresPreAuthorization = false;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -91,14 +85,8 @@ public class Insurance {
     public BigDecimal getMaxAnnualCoverage() { return maxAnnualCoverage; }
     public void setMaxAnnualCoverage(BigDecimal maxAnnualCoverage) { this.maxAnnualCoverage = maxAnnualCoverage; }
     
-    public BigDecimal getUsedAnnualCoverage() { return usedAnnualCoverage; }
-    public void setUsedAnnualCoverage(BigDecimal usedAnnualCoverage) { this.usedAnnualCoverage = usedAnnualCoverage; }
-    
     public Boolean getActive() { return active; }
     public void setActive(Boolean active) { this.active = active; }
-    
-    public Boolean getRequiresPreAuthorization() { return requiresPreAuthorization; }
-    public void setRequiresPreAuthorization(Boolean requiresPreAuthorization) { this.requiresPreAuthorization = requiresPreAuthorization; }
     
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

@@ -47,9 +47,7 @@ public class InsuranceService {
         insurance.setDeductible(request.deductible());
         insurance.setMaxCoveragePerConsultation(request.maxCoveragePerConsultation());
         insurance.setMaxAnnualCoverage(request.maxAnnualCoverage());
-        insurance.setUsedAnnualCoverage(java.math.BigDecimal.ZERO);
         insurance.setActive(true);
-        insurance.setRequiresPreAuthorization(request.requiresPreAuthorization() != null && request.requiresPreAuthorization());
         insurance.setCreatedAt(LocalDateTime.now());
         insurance.setUpdatedAt(LocalDateTime.now());
 
@@ -81,7 +79,6 @@ public class InsuranceService {
         insurance.setDeductible(request.deductible());
         insurance.setMaxCoveragePerConsultation(request.maxCoveragePerConsultation());
         insurance.setMaxAnnualCoverage(request.maxAnnualCoverage());
-        insurance.setRequiresPreAuthorization(request.requiresPreAuthorization() != null && request.requiresPreAuthorization());
         insurance.setUpdatedAt(LocalDateTime.now());
 
         Insurance updated = insuranceRepository.save(insurance);
@@ -144,9 +141,7 @@ public class InsuranceService {
             insurance.getDeductible(),
             insurance.getMaxCoveragePerConsultation(),
             insurance.getMaxAnnualCoverage(),
-            insurance.getUsedAnnualCoverage(),
             insurance.getActive(),
-            insurance.getRequiresPreAuthorization(),
             insurance.getCreatedAt(),
             insurance.getUpdatedAt()
         );

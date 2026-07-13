@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -76,6 +77,7 @@ public class PatientInsuranceService {
         patientInsurance.setPatient(patient);
         patientInsurance.setInsurance(insurance);
         patientInsurance.setPolicyNumber(request.policyNumber());
+        patientInsurance.setUsedAnnualCoverage(BigDecimal.ZERO);
         patientInsurance.setPolicyHolderName(request.policyHolderName());
         patientInsurance.setRelationshipToHolder(request.relationshipToHolder());
         patientInsurance.setIsPrimary(request.isPrimary() != null && request.isPrimary());
@@ -146,6 +148,7 @@ public class PatientInsuranceService {
             patientInsurance.getId(),
             patientInsurance.getPatient().getId(),
             patientInsurance.getInsurance().getId(),
+            patientInsurance.getUsedAnnualCoverage(),
             patientInsurance.getInsurance().getName(),
             patientInsurance.getPolicyNumber(),
             patientInsurance.getPolicyHolderName(),

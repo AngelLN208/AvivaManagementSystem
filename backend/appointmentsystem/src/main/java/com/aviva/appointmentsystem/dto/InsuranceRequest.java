@@ -31,7 +31,5 @@ public record InsuranceRequest(
 
     @NotNull(message = "El máximo anual es requerido")
     @DecimalMin(value = "0.01", message = "El máximo anual debe ser mayor a 0")
-    BigDecimal maxAnnualCoverage,
-
-    Boolean requiresPreAuthorization
+    BigDecimal maxAnnualCoverage
 ) {}

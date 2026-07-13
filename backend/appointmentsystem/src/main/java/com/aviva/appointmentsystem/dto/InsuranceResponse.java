@@ -14,9 +14,7 @@ public record InsuranceResponse(
     BigDecimal deductible,
     BigDecimal maxCoveragePerConsultation,
     BigDecimal maxAnnualCoverage,
-    BigDecimal usedAnnualCoverage,
     Boolean active,
-    Boolean requiresPreAuthorization,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
 ) {}

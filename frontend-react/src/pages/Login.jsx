@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
 export default function Login() {

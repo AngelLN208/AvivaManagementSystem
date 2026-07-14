@@ -7,7 +7,6 @@ import Citas from './pages/Citas';
 import Pacientes from './pages/Pacientes';
 import HorarioMedicos from './pages/HorarioMedicos';
 import Pagos from './pages/Pagos';
-import Notificaciones from './pages/Notificaciones';
 
 function App() {
   return (
@@ -21,7 +20,6 @@ function App() {
           <Route path="/pacientes" element={<Pacientes />} />
           <Route path="/horario-medicos" element={<HorarioMedicos />} />
           <Route path="/pagos" element={<Pagos />} />
-          <Route path="/notificaciones" element={<Notificaciones />} />
         </Route>
       </Route>
     </Routes>

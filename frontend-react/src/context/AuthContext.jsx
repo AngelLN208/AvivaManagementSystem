@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login as loginApi } from '../api/authApi';
 import { parseJwt } from '../utils/helpers';
-import AuthContext from './authContext';
+
+const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ export function AuthProvider({ children }) {
     const data = await loginApi(username, password);
     const token = data.token;
     const payload = parseJwt(token);
-
+    
     if (payload.role !== 'RECEPTIONIST') {
       throw new Error('Acceso solo para personal de recepción.');
     }
@@ -43,4 +44,8 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
 }

@@ -52,10 +52,10 @@ export default function ModalNuevaCita({ onCrear, isCreating }) {
 
   function handleSubmit(e) {
     e.preventDefault();
-    if (!paciente)  { alert('❌ Primero busca y selecciona un paciente.'); return; }
-    if (!medicoId)  { alert('❌ Selecciona un médico.'); return; }
-    if (!fecha)     { alert('❌ Selecciona una fecha.'); return; }
-    if (!horario)   { alert('❌ Selecciona un horario.'); return; }
+    if (!paciente) { alert('❌ Primero busca y selecciona un paciente.'); return; }
+    if (!medicoId) { alert('❌ Selecciona un médico.'); return; }
+    if (!fecha) { alert('❌ Selecciona una fecha.'); return; }
+    if (!horario) { alert('❌ Selecciona un horario.'); return; }
 
     onCrear(
       {
@@ -184,9 +184,13 @@ export default function ModalNuevaCita({ onCrear, isCreating }) {
                   <option value="" disabled>
                     {!medicoId || !fecha ? 'Primero selecciona médico y fecha...' : cargandoSlots ? 'Cargando horarios...' : 'Seleccionar horario...'}
                   </option>
-                  {slots.map((s) => (
-                    <option key={s.startTime} value={s.startTime}>{s.startTime.substring(0, 5)} — {s.endTime.substring(0, 5)}</option>
-                  ))}
+                  {slots
+                    .filter((s, index, arr) => arr.findIndex(x => x.startTime === s.startTime && x.endTime === s.endTime) === index)
+                    .map((s, index) => (
+                      <option key={`${s.startTime}-${s.endTime}-${index}`} value={s.startTime}>
+                        {s.startTime.substring(0, 5)} — {s.endTime.substring(0, 5)}
+                      </option>
+                    ))}
                 </select>
                 <small className="text-muted">
                   {medicoId && fecha && !cargandoSlots && slots.length === 0 && 'No hay horarios disponibles para esta fecha.'}

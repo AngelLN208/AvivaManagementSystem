@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../context/AuthContext';
 
 const items = [
   { to: '/', icon: 'fa-solid fa-border-all', label: 'Panel Principal' },
@@ -7,7 +7,6 @@ const items = [
   { to: '/pacientes', icon: 'fa-solid fa-bed-pulse', label: 'Pacientes' },
   { to: '/horario-medicos', icon: 'fa-solid fa-stethoscope', label: 'Horario Médicos' },
   { to: '/pagos', icon: 'fa-solid fa-money-bill-wave', label: 'Pagos' },
-  { to: '/notificaciones', icon: 'fa-solid fa-bell', label: 'Notificaciones' },
 ];
 
 export default function Sidebar({ onClose, abierto }) {

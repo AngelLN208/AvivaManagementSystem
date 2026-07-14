@@ -1,0 +1,14 @@
+# Dependencias y artefactos locales
+node_modules
+dist
+*.local
+.env
+
+# Registros
+*.log
+npm-debug.log*
+
+# Editores y sistema
+.DS_Store
+.idea
+.vscode/*

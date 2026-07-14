@@ -1,70 +1,63 @@
-# 🏥 Aviva Appointment System
+# 🏥 Aviva Management System
 
-Aplicativo web de gestión de citas médicas para la Clínica Aviva.
+Sistema de gestión de citas para Clínica Aviva, con backend Spring Boot y
+frontends React separados para el personal y los pacientes.
 
----
+## Alcance
 
-## 📋 Descripción
+El sistema permite al personal gestionar citas, pacientes, médicos, horarios,
+pagos, notificaciones y procesos de atención según su rol. El portal del
+paciente permite autorregistro y autogestión de citas propias.
 
-Aplicación web que permite gestionar citas médicas, pagss, pacientes, 
-doctores, atención médica y especialidades de la Clínica Aviva, 
-mediante un portal para uso del personal interno (médico, 
-administrador y recepcionista) así como un portal paciente donde
-podra autogestionar sus citas y su pago. 
-El sistema contara con notificaciones sobre cambios en las citas además
-de auditorías de las mismas
+En esta fase el portal paciente **no incluye** pagos, información clínica,
+diagnósticos, triaje, seguros ni resultados médicos.
 
----
+## Tecnologías
 
-## 🚀 Tecnologías utilizadas
+- Java 21 y Spring Boot 4.0.6.
+- Spring Security con JWT.
+- PostgreSQL en desarrollo/producción y H2 aislado para pruebas.
+- React 19, Vite 8, React Router, TanStack Query y Axios.
+- Maven y npm.
 
-- Java 21
-- Spring Boot 4.0.6
-- PostgreSQL
-- HTML5, CSS3, JavaScript (para el segundo avance)
-- Maven
+## Estructura
 
----
-
-## 📁 Estructura del proyecto
-
-```
-AvivaAppointmentSystem/
-├── appointmentsystem/
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/com/aviva/appointmentsystem/
-│   │   │   │   ├── controllers/
-│   │   │   │   ├── dto/
-│   │   │   │   ├── models/
-│   │   │   │   ├── repositories/
-│   │   │   │   ├── services/
-│   │   │   │   └── AppointmentsystemApplication.java
-│   │   │   └── resources/
-│   │   │       ├── static/
-│   │   │       │   ├── css/
-│   │   │       │   ├── js/
-│   │   │       │   └── img/
-│   │   │       ├── templates/
-│   │   │       └── application.properties
-│   │   └── test/
-│   ├── .gitignore
-│   ├── mvnw
-│   └── pom.xml
-└── README.md
+```text
+AvivaManagementSystem/
+├── backend/appointmentsystem/ # API Spring Boot
+├── frontend-react/            # Aplicación React del staff/recepción
+├── frontend-portal/           # Aplicación React del paciente
+├── frontend/                  # Prototipo HTML/JS legado
+└── CAMBIOS_PORTAL_PACIENTE.md # Registro de implementación del portal
 ```
 
+## Ejecución local
 
----
+Backend:
 
-## 👥 Funcionalidades
+```bash
+cd backend/appointmentsystem
+mvn spring-boot:run
+```
 
-- 📅 Gestión de citas médicas
-- 👤 Gestión de pacientes
-- 🩺 Atención médica
-- 🏷️ Gestión de especialidades
-- 🔐 Login por roles (Admin, Doctor, Recepcionista, Paciente)
-- 🔐 Auditorías de citas
+Frontend del staff:
 
----
+```bash
+cd frontend-react
+npm ci
+npm run dev
+```
 
+Portal paciente:
+
+```bash
+cd frontend-portal
+npm ci
+npm run dev
+```
+
+Por defecto, staff usa `http://localhost:5173`, portal paciente
+`http://localhost:5174` y backend `http://localhost:8080`.
+
+Consulta [frontend-portal/README.md](frontend-portal/README.md) para las rutas,
+configuración, verificación y despliegue del portal paciente.

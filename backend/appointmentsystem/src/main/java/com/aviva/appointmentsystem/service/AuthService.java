@@ -158,6 +158,9 @@ public class AuthService {
         } catch (DateTimeParseException e) {
             throw new ValidationException("Formato de fecha inválido. Use: yyyy-MM-dd");
         }
+        if (dateOfBirth.isAfter(LocalDate.now())) {
+            throw new ValidationException("La fecha de nacimiento no puede ser futura");
+        }
 
         LocalDateTime now = LocalDateTime.now();
 

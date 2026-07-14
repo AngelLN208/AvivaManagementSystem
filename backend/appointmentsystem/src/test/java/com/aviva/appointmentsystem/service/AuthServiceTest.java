@@ -4,6 +4,7 @@ import com.aviva.appointmentsystem.dto.RegisterPatientRequest;
 import com.aviva.appointmentsystem.entity.Patient;
 import com.aviva.appointmentsystem.entity.Role;
 import com.aviva.appointmentsystem.entity.User;
+import com.aviva.appointmentsystem.exception.ValidationException;
 import com.aviva.appointmentsystem.repository.PatientRepository;
 import com.aviva.appointmentsystem.repository.UserRepository;
 import com.aviva.appointmentsystem.security.JwtUtil;
@@ -14,12 +15,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -80,5 +84,35 @@ class AuthServiceTest {
         assertEquals(Role.PATIENT, savedUser.getRole());
         assertEquals("encoded-password", savedUser.getPassword());
         assertSame(savedUser, savedPatient.getUser());
+    }
+
+    @Test
+    void registerPatientRejectsFutureDateOfBirth() {
+        AuthService service = new AuthService(
+                userRepository,
+                patientRepository,
+                passwordEncoder,
+                jwtUtil
+        );
+        RegisterPatientRequest request = new RegisterPatientRequest(
+                "future.patient",
+                "secret123",
+                "87654321",
+                "Paciente",
+                "Futuro",
+                "OTHER",
+                LocalDate.now().plusDays(1).toString(),
+                "999888777",
+                "future@example.com",
+                "Lima"
+        );
+
+        when(userRepository.findByUsername(request.username())).thenReturn(Optional.empty());
+        when(patientRepository.findByDni(request.dni())).thenReturn(Optional.empty());
+        when(patientRepository.findByEmail(request.email())).thenReturn(Optional.empty());
+
+        assertThrows(ValidationException.class, () -> service.registerPatient(request));
+        verify(userRepository, never()).save(any(User.class));
+        verify(patientRepository, never()).save(any(Patient.class));
     }
 }

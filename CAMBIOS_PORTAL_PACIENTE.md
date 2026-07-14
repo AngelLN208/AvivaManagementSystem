@@ -126,10 +126,88 @@ rotarse y revocarse antes de reutilizar la base de datos en producción.
 
 ### Pendiente para fases posteriores
 
-- Adaptar o crear el frontend del portal para consumir `/appointments/me`.
 - Definir un flujo verificado para habilitar cuentas a pacientes creados por el
   staff o autorregistrados antes de esta relación.
 - Extender el patrón `/me` a perfil, pagos, comprobantes, seguros y
   notificaciones cuando se implemente cada módulo del portal.
 - Endurecer contra reservas simultáneas del mismo médico/horario mediante una
   estrategia transaccional o restricción específica de PostgreSQL.
+
+## Fase 2 - Frontend del portal paciente (14 de julio de 2026)
+
+### Decisión de arquitectura
+
+Se creó una aplicación React/Vite independiente en `frontend-portal`. El
+frontend `frontend-react` conserva exclusivamente las funciones del staff y no
+fue modificado. Se descartó continuar el prototipo HTML de
+`frontend/views/paciente` porque no tenía autenticación común, consumía
+respuestas incorrectamente y sus flujos de cita estaban incompletos.
+
+### Funciones implementadas
+
+- Registro público mediante `POST /api/auth/register-patient`, seguido de login.
+- Login que acepta exclusivamente cuentas con rol `PATIENT`.
+- Inicio con próxima cita y resumen de agenda.
+- Catálogo de médicos y especialidades activos.
+- Agendamiento por especialidad, médico, fecha y slot disponible.
+- Listado de citas propias, separadas entre próximas e historial.
+- Reprogramación y cancelación con confirmación y mensajes de resultado.
+- Página 404 y redirección de rutas protegidas al login.
+
+El payload de creación contiene únicamente `doctorId`, `appointmentDateTime` y
+`reason`; nunca contiene `patientId`. Todas las operaciones de citas usan las
+rutas `/api/appointments/me`.
+
+### Sesión y seguridad del cliente
+
+- La sesión se guarda bajo `aviva.portal.session`, separada de la sesión del
+  frontend del staff.
+- Se valida que el JWT tenga rol `PATIENT` y no esté vencido.
+- Una respuesta `401` en una petición autenticada limpia la sesión.
+- Los errores del backend conservan `status`, `code` y errores por campo para
+  que la interfaz pueda mostrar mensajes útiles.
+- Los horarios del día actual que ya pasaron se excluyen antes de mostrarse.
+- Las fechas se componen como hora local (`yyyy-MM-ddTHH:mm:ss`) y no se
+  convierten a UTC.
+- La caché de citas se separa por usuario y se limpia al iniciar/cerrar sesión,
+  al vencer el JWT y cuando otra pestaña modifica la sesión.
+
+### Interfaz y accesibilidad
+
+- Diseño responsive basado en la paleta mint/teal existente de Aviva.
+- Navegación móvil cerrable con fondo, enlace o tecla Escape.
+- El panel móvil cerrado queda recortado dentro del viewport y no genera
+  desplazamiento horizontal.
+- Modo claro/oscuro, enlace para saltar al contenido y foco visible.
+- Mensajes con `role=status`/`role=alert`, labels asociados y controles táctiles.
+- Compatibilidad con `prefers-reduced-motion`.
+- Se usan tarjetas para citas, evitando tablas difíciles de interpretar en móvil.
+
+### Endurecimiento de integración con el backend
+
+- Crear, consultar disponibilidad o reprogramar con un médico inactivo ahora
+  devuelve la regla `DOCTOR_INACTIVE`; el ID directo no permite omitir el filtro
+  de médicos activos del portal.
+- El autorregistro rechaza fechas de nacimiento futuras antes de persistir el
+  usuario o el paciente.
+- Los orígenes locales del portal (`localhost:5174` y `127.0.0.1:5174`) se
+  incluyen en CORS; una prueba de preflight evita perder esta integración.
+- Se agregaron cuatro pruebas de servicio y una de CORS. El resultado final del
+  backend es **36 pruebas ejecutadas, 0 fallos, 0 errores y 0 omitidas**.
+
+### Fuera de alcance por decisión funcional
+
+No se muestran información clínica, consultas, diagnósticos, triaje, pagos,
+notificaciones, seguros ni administración de otros pacientes. El backend no
+expone esos módulos como autoservicio para `PATIENT` en esta fase.
+
+### Verificación del frontend
+
+- `npm test`: **13 pruebas aprobadas, 0 fallos**.
+- `npm run lint`: **sin errores ni advertencias**.
+- `npm run build`: **compilación de producción exitosa**.
+- Prueba local en navegador: login `PATIENT`, protección de rutas, catálogo de
+  médicos, preselección del agendamiento y menú responsive verificados.
+
+La guía de ejecución, configuración y estructura quedó registrada en
+`frontend-portal/README.md`.

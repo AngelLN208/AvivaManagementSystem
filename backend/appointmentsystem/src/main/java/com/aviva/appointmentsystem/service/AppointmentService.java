@@ -128,9 +128,8 @@ public class AppointmentService {
         Patient patient = patientRepository.findById(request.patientId())
                 .orElseThrow(() -> new ResourceNotFoundException("Paciente", request.patientId()));
 
-        // 1. Validar que el doctor exista
-        Doctor doctor = doctorRepository.findById(request.doctorId())
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor", request.doctorId()));
+        // Un ID directo nunca debe reactivar de facto a un médico deshabilitado.
+        Doctor doctor = requireActiveDoctor(request.doctorId());
 
         LocalDateTime appointmentDateTime = request.appointmentDateTime();
 
@@ -205,6 +204,7 @@ public class AppointmentService {
         }
 
         Doctor doctor = appointment.getDoctor();
+        validateDoctorActive(doctor);
 
         // RN-38: Validar dentro del horario del doctor en el nuevo día
         validateWithinSchedule(doctor, newDateTime);
@@ -426,8 +426,7 @@ public class AppointmentService {
     public List<AvailableSlotResponse> getAvailableSlots(Long doctorId, LocalDate date) {
         logger.info("Calculando slots disponibles: doctor={}, fecha={}", doctorId, date);
 
-        Doctor doctor = doctorRepository.findById(doctorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
+        Doctor doctor = requireActiveDoctor(doctorId);
 
         // Paso 1: Obtener schedules activos del doctor para ese día de la semana
         DayOfWeek dayOfWeek = date.getDayOfWeek();
@@ -505,6 +504,23 @@ public class AppointmentService {
     // ========================================================
     // VALIDACIONES PRIVADAS
     // ========================================================
+
+    /** Obtiene un médico y evita operaciones nuevas cuando fue desactivado. */
+    private Doctor requireActiveDoctor(Long doctorId) {
+        Doctor doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
+        validateDoctorActive(doctor);
+        return doctor;
+    }
+
+    private void validateDoctorActive(Doctor doctor) {
+        if (doctor == null || doctor.getStatus() != UserStatus.ACTIVE) {
+            throw new BusinessRuleException(
+                    "DOCTOR_INACTIVE",
+                    "El médico seleccionado no se encuentra activo"
+            );
+        }
+    }
 
     /**
      * RN-38: Valida que la hora de la cita esté dentro del horario activo del doctor ese día.

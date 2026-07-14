@@ -3,6 +3,7 @@ package com.aviva.appointmentsystem.service;
 import com.aviva.appointmentsystem.dto.AppointmentResponse;
 import com.aviva.appointmentsystem.dto.PatientAppointmentRequest;
 import com.aviva.appointmentsystem.entity.Appointment;
+import com.aviva.appointmentsystem.entity.AppointmentStatus;
 import com.aviva.appointmentsystem.entity.AuditLog;
 import com.aviva.appointmentsystem.entity.Doctor;
 import com.aviva.appointmentsystem.entity.Gender;
@@ -11,6 +12,7 @@ import com.aviva.appointmentsystem.entity.Patient;
 import com.aviva.appointmentsystem.entity.Specialty;
 import com.aviva.appointmentsystem.entity.User;
 import com.aviva.appointmentsystem.entity.UserStatus;
+import com.aviva.appointmentsystem.exception.BusinessRuleException;
 import com.aviva.appointmentsystem.exception.ResourceNotFoundException;
 import com.aviva.appointmentsystem.exception.UserInactiveException;
 import com.aviva.appointmentsystem.repository.AppointmentRepository;
@@ -172,6 +174,78 @@ class AppointmentServicePatientPortalTest {
         assertEquals(41L, appointmentCaptor.getValue().getPatient().getId());
         assertEquals(41L, response.patient().id());
         assertEquals("patient-user", auditCaptor.getValue().getModifiedBy());
+    }
+
+    @Test
+    void rejectsCreatingAppointmentWithInactiveDoctor() {
+        Patient patient = activePatient(41L);
+        Doctor doctor = activeDoctor(7L);
+        doctor.setStatus(UserStatus.INACTIVE);
+        LocalDateTime requestedDateTime = LocalDate.now().plusWeeks(2).atTime(10, 0);
+
+        when(patientRepository.findByUserUsername("patient-user"))
+                .thenReturn(Optional.of(patient));
+        when(patientRepository.findById(41L)).thenReturn(Optional.of(patient));
+        when(doctorRepository.findById(7L)).thenReturn(Optional.of(doctor));
+
+        BusinessRuleException exception = assertThrows(
+                BusinessRuleException.class,
+                () -> service.createForCurrentPatient(
+                        "patient-user",
+                        new PatientAppointmentRequest(7L, requestedDateTime, null)
+                )
+        );
+
+        assertEquals("DOCTOR_INACTIVE", exception.getCode());
+        verify(medicalScheduleRepository, never())
+                .findByDoctorAndDayOfWeekAndActive(any(), any(), eq(true));
+        verify(appointmentRepository, never()).save(any(Appointment.class));
+    }
+
+    @Test
+    void rejectsAvailabilityForInactiveDoctor() {
+        Doctor doctor = activeDoctor(7L);
+        doctor.setStatus(UserStatus.INACTIVE);
+        when(doctorRepository.findById(7L)).thenReturn(Optional.of(doctor));
+
+        BusinessRuleException exception = assertThrows(
+                BusinessRuleException.class,
+                () -> service.getAvailableSlots(7L, LocalDate.now().plusDays(1))
+        );
+
+        assertEquals("DOCTOR_INACTIVE", exception.getCode());
+        verify(medicalScheduleRepository, never())
+                .findByDoctorAndDayOfWeekAndActive(any(), any(), eq(true));
+    }
+
+    @Test
+    void rejectsReschedulingWhenAssignedDoctorIsInactive() {
+        Patient patient = activePatient(41L);
+        Doctor doctor = activeDoctor(7L);
+        doctor.setStatus(UserStatus.INACTIVE);
+        Appointment appointment = new Appointment();
+        appointment.setId(100L);
+        appointment.setPatient(patient);
+        appointment.setDoctor(doctor);
+        appointment.setStatus(AppointmentStatus.PENDING);
+        appointment.setAppointmentDateTime(LocalDate.now().plusDays(2).atTime(9, 0));
+
+        when(patientRepository.findByUserUsername("patient-user"))
+                .thenReturn(Optional.of(patient));
+        when(appointmentRepository.findByIdAndPatientId(100L, 41L))
+                .thenReturn(Optional.of(appointment));
+
+        BusinessRuleException exception = assertThrows(
+                BusinessRuleException.class,
+                () -> service.rescheduleForCurrentPatient(
+                        "patient-user",
+                        100L,
+                        LocalDate.now().plusWeeks(1).atTime(11, 0).toString()
+                )
+        );
+
+        assertEquals("DOCTOR_INACTIVE", exception.getCode());
+        verify(appointmentRepository, never()).save(any(Appointment.class));
     }
 
     private Patient activePatient(Long id) {

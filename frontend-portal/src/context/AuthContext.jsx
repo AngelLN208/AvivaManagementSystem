@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { loginPatient, registerPatient } from '../api/authApi.js';
+import { completePatientActivation, loginPatient, registerPatient } from '../api/authApi.js';
 import {
   clearPortalSession,
   createPatientSession,
@@ -19,8 +19,7 @@ export function AuthProvider({ children }) {
   const queryClient = useQueryClient();
   const [session, setSession] = useState(readPortalSession);
 
-  const login = useCallback(async (username, password) => {
-    const response = await loginPatient(username, password);
+  const establishSession = useCallback((response) => {
     const nextSession = createPatientSession(response);
     // Evita que un paciente herede datos cacheados de una sesión anterior.
     queryClient.clear();
@@ -28,6 +27,11 @@ export function AuthProvider({ children }) {
     setSession(nextSession);
     return nextSession;
   }, [queryClient]);
+
+  const login = useCallback(async (username, password) => {
+    const response = await loginPatient(username, password);
+    return establishSession(response);
+  }, [establishSession]);
 
   const register = useCallback(async (patientData) => {
     await registerPatient(patientData);
@@ -39,6 +43,12 @@ export function AuthProvider({ children }) {
       throw error;
     }
   }, [login]);
+
+  const completeActivation = useCallback(async (activationData) => {
+    const response = await completePatientActivation(activationData);
+    if (response?.token) return establishSession(response);
+    return login(activationData.username, activationData.password);
+  }, [establishSession, login]);
 
   const logout = useCallback(() => {
     clearPortalSession();
@@ -103,8 +113,9 @@ export function AuthProvider({ children }) {
     isAuthenticated: Boolean(session),
     login,
     register,
+    completeActivation,
     logout,
-  }), [session, login, register, logout]);
+  }), [session, login, register, completeActivation, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{heading}}</title>
+  </head>
+  <body style="margin:0;background:#f2f7f6;color:#102a2a;font-family:Arial,Helvetica,sans-serif;">
+    <span style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">{{preheader}}</span>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f2f7f6;padding:28px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #dbe8e5;border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(15,76,70,.08);">
+            <tr>
+              <td style="background:#075f58;padding:24px 32px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td>
+                      <span style="display:inline-block;border:2px solid rgba(255,255,255,.85);border-radius:10px;padding:7px 10px;color:#ffffff;font-size:22px;font-weight:800;letter-spacing:2px;">AVIVA</span>
+                    </td>
+                    <td align="right" style="color:#d7f4ee;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Portal de pacientes</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:34px 32px 18px;">
+                {{content}}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:22px 32px 28px;border-top:1px solid #e3ecea;color:#667b78;font-size:12px;line-height:1.6;">
+                Este es un mensaje automático de Clínica Aviva. Por seguridad, nunca compartas tus credenciales ni códigos de acceso.<br>
+                <a href="{{portalUrl}}" style="color:#075f58;font-weight:700;text-decoration:none;">Ingresar al portal de pacientes</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

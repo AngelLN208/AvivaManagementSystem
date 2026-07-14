@@ -1,5 +1,6 @@
 package com.aviva.appointmentsystem.service;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -47,20 +48,32 @@ public class BrevoEmailSender implements EmailSender {
         this.fromName = fromName;
     }
 
-    /**
-     * Envia un correo de texto. Los errores HTTP se propagan al scheduler para
-     * que registre el intento y aplique la politica de reintentos.
-     */
+    /** Mantiene el contrato histórico de correo en texto plano. */
     @Override
     public void send(String recipient, String subject, String message) {
+        send(recipient, subject, message, null);
+    }
+
+    /**
+     * Envía contenido multipart alternativo a través de Brevo. Los errores
+     * HTTP se propagan para que el scheduler aplique la política de reintentos.
+     */
+    @Override
+    public void send(
+            String recipient,
+            String subject,
+            String textContent,
+            String htmlContent
+    ) {
         validateConfiguration();
-        validateMessage(recipient, subject, message);
+        validateMessage(recipient, subject, textContent);
 
         BrevoEmailRequest request = new BrevoEmailRequest(
                 new Sender(fromName, fromEmail),
                 List.of(new Recipient(recipient)),
                 subject,
-                message
+                textContent,
+                htmlContent
         );
 
         restClient.post()
@@ -93,11 +106,13 @@ public class BrevoEmailSender implements EmailSender {
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private record BrevoEmailRequest(
             Sender sender,
             List<Recipient> to,
             String subject,
-            String textContent
+            String textContent,
+            String htmlContent
     ) {}
 
     private record Sender(String name, String email) {}

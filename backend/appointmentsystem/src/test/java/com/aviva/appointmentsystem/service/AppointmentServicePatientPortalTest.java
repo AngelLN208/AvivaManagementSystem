@@ -9,6 +9,9 @@ import com.aviva.appointmentsystem.entity.Doctor;
 import com.aviva.appointmentsystem.entity.Gender;
 import com.aviva.appointmentsystem.entity.MedicalSchedule;
 import com.aviva.appointmentsystem.entity.Patient;
+import com.aviva.appointmentsystem.entity.Payment;
+import com.aviva.appointmentsystem.entity.PaymentMethod;
+import com.aviva.appointmentsystem.entity.PaymentStatus;
 import com.aviva.appointmentsystem.entity.Specialty;
 import com.aviva.appointmentsystem.entity.User;
 import com.aviva.appointmentsystem.entity.UserStatus;
@@ -104,6 +107,68 @@ class AppointmentServicePatientPortalTest {
     }
 
     @Test
+    void cancellingAppointmentAlsoCancelsItsPendingPayment() {
+        Patient patient = activePatient(41L);
+        Appointment appointment = payableAppointment(100L, patient);
+        Payment payment = paymentFor(70L, appointment, PaymentStatus.PENDING);
+        when(patientRepository.findByUserUsername("patient-user"))
+                .thenReturn(Optional.of(patient));
+        when(appointmentRepository.findByIdAndPatientId(100L, 41L))
+                .thenReturn(Optional.of(appointment));
+        when(paymentRepository.findByAppointmentIdForUpdate(100L))
+                .thenReturn(Optional.of(payment));
+        when(paymentRepository.save(any(Payment.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(appointmentRepository.save(any(Appointment.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.cancelForCurrentPatient("patient-user", 100L);
+
+        assertEquals(AppointmentStatus.CANCELLED, appointment.getStatus());
+        assertEquals(PaymentStatus.CANCELLED, payment.getStatus());
+        verify(paymentRepository).save(payment);
+    }
+
+    @Test
+    void realPaidAppointmentRequiresRefundBeforeCancellation() {
+        Patient patient = activePatient(41L);
+        Appointment appointment = payableAppointment(100L, patient);
+        Payment payment = paymentFor(70L, appointment, PaymentStatus.PAID);
+        when(patientRepository.findByUserUsername("patient-user"))
+                .thenReturn(Optional.of(patient));
+        when(appointmentRepository.findByIdAndPatientId(100L, 41L))
+                .thenReturn(Optional.of(appointment));
+        when(paymentRepository.findByAppointmentIdForUpdate(100L))
+                .thenReturn(Optional.of(payment));
+
+        BusinessRuleException exception = assertThrows(
+                BusinessRuleException.class,
+                () -> service.cancelForCurrentPatient("patient-user", 100L)
+        );
+
+        assertEquals("PAID_APPOINTMENT_REQUIRES_REFUND", exception.getCode());
+        assertEquals(AppointmentStatus.PENDING, appointment.getStatus());
+        verify(appointmentRepository, never()).save(any(Appointment.class));
+        verify(paymentRepository, never()).save(any(Payment.class));
+    }
+
+    @Test
+    void staffCancellationPreservesLegacyFlowWithoutChangingPayments() {
+        Patient patient = activePatient(41L);
+        Appointment appointment = payableAppointment(100L, patient);
+        when(appointmentRepository.findById(100L))
+                .thenReturn(Optional.of(appointment));
+        when(appointmentRepository.save(any(Appointment.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.cancel(100L);
+
+        assertEquals(AppointmentStatus.CANCELLED, appointment.getStatus());
+        verify(paymentRepository, never()).findByAppointmentIdForUpdate(100L);
+        verify(paymentRepository, never()).save(any(Payment.class));
+    }
+
+    @Test
     void rejectsPortalAccessWhenPatientProfileIsInactive() {
         Patient patient = activePatient(41L);
         patient.setStatus(UserStatus.INACTIVE);
@@ -153,7 +218,7 @@ class AppointmentServicePatientPortalTest {
             return appointment;
         });
         when(patientInsuranceRepository.findValidPrimaryInsurance(
-                eq(patient), any(LocalDateTime.class)))
+                patient, requestedDateTime))
                 .thenReturn(Optional.empty());
 
         PatientAppointmentRequest request = new PatientAppointmentRequest(
@@ -174,6 +239,8 @@ class AppointmentServicePatientPortalTest {
         assertEquals(41L, appointmentCaptor.getValue().getPatient().getId());
         assertEquals(41L, response.patient().id());
         assertEquals("patient-user", auditCaptor.getValue().getModifiedBy());
+        verify(patientInsuranceRepository)
+                .findValidPrimaryInsurance(patient, requestedDateTime);
     }
 
     @Test
@@ -292,6 +359,39 @@ class AppointmentServicePatientPortalTest {
         doctor.setCreatedAt(now);
         doctor.setUpdatedAt(now);
         return doctor;
+    }
+
+    private Appointment payableAppointment(Long id, Patient patient) {
+        LocalDateTime now = LocalDateTime.now();
+        Appointment appointment = new Appointment();
+        appointment.setId(id);
+        appointment.setPatient(patient);
+        appointment.setDoctor(activeDoctor(7L));
+        appointment.setStatus(AppointmentStatus.PENDING);
+        appointment.setAppointmentDateTime(now.plusDays(5));
+        appointment.setCreatedAt(now);
+        appointment.setUpdatedAt(now);
+        return appointment;
+    }
+
+    private Payment paymentFor(
+            Long id,
+            Appointment appointment,
+            PaymentStatus status) {
+
+        LocalDateTime now = LocalDateTime.now();
+        Payment payment = new Payment();
+        payment.setId(id);
+        payment.setAppointment(appointment);
+        payment.setBaseAmount(new java.math.BigDecimal("100.00"));
+        payment.setDeductibleApplied(java.math.BigDecimal.ZERO);
+        payment.setInsuranceCoveredAmount(java.math.BigDecimal.ZERO);
+        payment.setAmount(new java.math.BigDecimal("100.00"));
+        payment.setStatus(status);
+        payment.setMethod(PaymentMethod.CREDIT_CARD);
+        payment.setCreatedAt(now);
+        payment.setUpdatedAt(now);
+        return payment;
     }
 
     private MedicalSchedule scheduleFor(Doctor doctor, LocalDateTime requestedDateTime) {

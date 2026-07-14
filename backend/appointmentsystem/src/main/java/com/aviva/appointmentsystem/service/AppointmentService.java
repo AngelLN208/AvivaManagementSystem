@@ -237,10 +237,15 @@ public class AppointmentService {
     public AppointmentResponse cancel(Long id) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cita", id));
-        return cancel(appointment, "SYSTEM");
+        // El flujo histórico de staff conserva su comportamiento: cancela la
+        // cita y deja cualquier regularización financiera para Pagos.
+        return cancel(appointment, "SYSTEM", false);
     }
 
-    private AppointmentResponse cancel(Appointment appointment, String modifiedBy) {
+    private AppointmentResponse cancel(
+            Appointment appointment,
+            String modifiedBy,
+            boolean validatePatientPayment) {
         Long id = appointment.getId();
         logger.info("Cancelando cita ID={}", id);
 
@@ -253,8 +258,27 @@ public class AppointmentService {
                 "No se puede cancelar una cita ya completada");
         }
 
+        LocalDateTime now = LocalDateTime.now();
+        Payment payment = validatePatientPayment
+                ? paymentRepository.findByAppointmentIdForUpdate(id).orElse(null)
+                : null;
+        if (payment != null) {
+            if (payment.getStatus() == PaymentStatus.PENDING) {
+                payment.setStatus(PaymentStatus.CANCELLED);
+                payment.setUpdatedAt(now);
+                paymentRepository.save(payment);
+                logger.info("Pago pendiente ID={} cancelado junto con cita ID={}",
+                        payment.getId(), id);
+            } else if (payment.getStatus() == PaymentStatus.PAID) {
+                throw new BusinessRuleException(
+                        "PAID_APPOINTMENT_REQUIRES_REFUND",
+                        "La cita tiene un pago confirmado y debe reembolsarse antes de cancelarla"
+                );
+            }
+        }
+
         appointment.setStatus(AppointmentStatus.CANCELLED);
-        appointment.setUpdatedAt(LocalDateTime.now());
+        appointment.setUpdatedAt(now);
 
         Appointment updated = appointmentRepository.save(appointment);
         logger.info("Cita cancelada: ID={}", id);
@@ -323,7 +347,7 @@ public class AppointmentService {
     public AppointmentResponse cancelForCurrentPatient(String username, Long appointmentId) {
         Patient patient = requirePatientProfile(username);
         Appointment appointment = requireOwnedAppointment(appointmentId, patient.getId());
-        return cancel(appointment, username);
+        return cancel(appointment, username, true);
     }
 
     // ========================================================
@@ -622,7 +646,9 @@ public class AppointmentService {
         payment.setUpdatedAt(now);
 
         PatientInsurance policy = patientInsuranceRepository
-                .findValidPrimaryInsurance(appointment.getPatient(), now)
+                .findValidPrimaryInsurance(
+                        appointment.getPatient(),
+                        appointment.getAppointmentDateTime())
                 .orElse(null);
 
         if (policy != null) {
@@ -685,6 +711,8 @@ public class AppointmentService {
      */
     private void createAppointmentNotifications(Appointment appointment, String notificationType) {
         try {
+            // Este texto breve se muestra en IN_APP y funciona como respaldo
+            // accesible del correo; el diseño HTML vive en EmailTemplateService.
             String patientMessage = buildPatientMessage(appointment, notificationType);
             String subject        = buildNotificationSubject(notificationType);
             LocalDateTime now      = LocalDateTime.now();
@@ -735,7 +763,7 @@ public class AppointmentService {
 
     private String buildNotificationSubject(String type) {
         return switch (type) {
-            case "APPOINTMENT_CREATED" -> "Cita médica confirmada";
+            case "APPOINTMENT_CREATED" -> "Cita médica registrada";
             case "APPOINTMENT_RESCHEDULED" -> "Cita médica reprogramada";
             case "APPOINTMENT_CANCELLED" -> "Cita médica cancelada";
             default -> "Notificación de cita médica";

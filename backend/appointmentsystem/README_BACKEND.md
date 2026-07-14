@@ -79,9 +79,9 @@ appointmentsystem/
 
 | RN | Descripción | Implementación |
 |----|-------------|----------------|
-| **RN-26** | Procesar pago → `PENDING → PAID` | Guard: si ya PAID o CANCELLED → `BusinessRuleException` (409) |
-| **RN-16** | Pago procesado → Cita `→ CONFIRMED` automáticamente | `appointment.setStatus(CONFIRMED)` en `processPayment()` |
-| **RN-28** | Generar `Receipt` automáticamente al procesar pago | `generateReceipt()`, formato: `RCP-yyyyMMdd-UUID8` |
+| **RN-26** | Procesar pago → `PENDING → PAID` | Solo `PENDING`; `PAID`, `CANCELLED` y `REFUNDED` devuelven 409 |
+| **RN-16** | Pago procesado → Cita `→ CONFIRMED` automáticamente | Solo si la cita está `PENDING` o `RESCHEDULED` |
+| **RN-28** | Generar `Receipt` automáticamente al procesar pago | Referencia única `RCP-*` para staff y portal |
 
 > **Nota importante:** `POST /api/payments/{id}/process` recibe el **ID del Payment**, no de la Appointment. Usar `GET /api/payments/appointment/{appointmentId}` primero para obtener el `paymentId`.
 
@@ -138,6 +138,11 @@ PENDING  ──[process()]──►  PAID
 ```
 LoginRequest           { username, password }
 RegisterPatientRequest { username, password, dni, firstName, lastName, gender, dateOfBirth, phone, email, address }
+PatientActivationRequest { dni }
+PatientActivationVerifyCodeRequest { challengeId, code }
+PatientActivationCompleteRequest { challengeId, activationToken, username, password }
+PortalPatientInsuranceRequest { insuranceId, policyNumber, policyHolderName, relationshipToHolder, effectiveDate, expirationDate }
+PatientPaymentRequest   { method }
 AppointmentRequest     { patientId, doctorId, appointmentDateTime, reason }
 TriageRequest          { bloodPressureSystolic, bloodPressureDiastolic, temperature, heartRate, respiratoryRate, weight, height, notes }
 ConsultationRequest    { diagnosis, treatment, notes }
@@ -146,7 +151,7 @@ ConsultationRequest    { diagnosis, treatment, notes }
 ### Salidas (Response) — nunca exposición de entidades JPA
 ```
 LoginResponse          { token, role, username, firstName, lastName }
-PaymentResponse        { id, amount, status, method, description, paymentDate, createdAt, updatedAt, appointmentId }
+PaymentResponse        { id, baseAmount, deductibleApplied, insuranceCoveredAmount, amount, status, method, appointmentId, ... }
 ReceiptResponse        { id, receiptNumber, description, totalAmount, paymentId, appointmentId, createdAt }
 AuditLogResponse       { id, appointmentId, action, newStatus, details, modifiedBy, createdAt }
 ```

@@ -72,13 +72,22 @@ DB_URL=jdbc:postgresql://mi-servidor:5432/clinica DB_USER=aviva DB_PASSWORD=segu
 
 ---
 
-## 📡 Endpoints disponibles (45 en total)
+## 📡 Endpoints disponibles (46 en total)
 
 ### Autenticación (pública)
 ```
 POST /api/auth/login
 POST /api/auth/register-patient
+POST /api/auth/patient-activation/request
+POST /api/auth/patient-activation/verify-code
+POST /api/auth/patient-activation/complete
 ```
+
+El registro comienza consultando el DNI. Si no existe, continúa el
+autorregistro normal. Si el paciente ya fue creado por el staff y aún no tiene
+cuenta, se envía un código de un solo uso al correo que ya está registrado. La
+verificación del código entrega un token temporal y un segundo request crea
+únicamente el `User` asociado; no duplica el `Patient`.
 
 ### Gestión de catálogos
 ```
@@ -115,7 +124,49 @@ POST               /api/payments/{id}/process?method=CASH
 GET                /api/receipts
 GET                /api/receipts/{id}
 GET                /api/receipts/number/{receiptNumber}
+
+GET                /api/payments/me                          (paciente propietario)
+GET                /api/payments/me/{id}                     (paciente propietario)
+POST               /api/payments/me/{id}/pay                 (paciente propietario)
+GET                /api/receipts/me                          (paciente propietario)
+GET                /api/receipts/me/{id}                     (paciente propietario)
+GET                /api/receipts/me/{id}/pdf                 (descarga PDF propia)
+GET                /api/receipts/me/payment/{paymentId}      (paciente propietario)
 ```
+
+`/pay` acepta un JSON como `{"method":"DEBIT_CARD"}`. El servidor resuelve el
+paciente, el importe y la cita desde el JWT y el pago persistido; nunca recibe
+`patientId`, monto ni números de tarjeta desde el portal.
+
+La descarga PDF se genera en memoria con Apache PDFBox, utiliza los datos
+persistidos del recibo y valida ownership antes de producir el archivo. No crea
+copias temporales ni altera la entidad histórica `Receipt`.
+
+### Seguro opcional del portal
+
+```text
+GET                /api/insurances
+GET                /api/patient-insurances/me
+POST               /api/patient-insurances/me
+DELETE             /api/patient-insurances/me/{id}
+```
+
+El portal admite cero o una póliza activa y nunca recibe `patientId`. Una
+póliza nueva se toma en cuenta al calcular pagos de citas creadas después de
+vincularla; los pagos pendientes ya calculados no se modifican retroactivamente.
+
+### Notificaciones y correo del portal
+
+```text
+GET                /api/notifications/me                    (paciente propietario)
+PATCH              /api/notifications/me/{id}/read          (paciente propietario)
+```
+
+Las notificaciones propias se relacionan mediante la cita y el paciente del
+JWT; el cliente no envía un correo para consultar recursos. Los correos se
+renderizan desde `src/main/resources/templates/email`, incluyen HTML responsive
+y conservan texto plano como respaldo. `PATIENT_PORTAL_URL` define el destino
+de los botones incluidos en esos correos.
 
 ### Flujo clínico
 ```

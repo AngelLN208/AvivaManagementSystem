@@ -3,9 +3,15 @@ package com.aviva.appointmentsystem.controller;
 import com.aviva.appointmentsystem.dto.ApiResponse;
 import com.aviva.appointmentsystem.dto.LoginRequest;
 import com.aviva.appointmentsystem.dto.LoginResponse;
+import com.aviva.appointmentsystem.dto.PatientActivationCompleteRequest;
+import com.aviva.appointmentsystem.dto.PatientActivationRequest;
+import com.aviva.appointmentsystem.dto.PatientActivationResponse;
+import com.aviva.appointmentsystem.dto.PatientActivationVerifyCodeRequest;
+import com.aviva.appointmentsystem.dto.PatientActivationVerifyCodeResponse;
 import com.aviva.appointmentsystem.dto.PatientResponse;
 import com.aviva.appointmentsystem.dto.RegisterPatientRequest;
 import com.aviva.appointmentsystem.service.AuthService;
+import com.aviva.appointmentsystem.service.PatientActivationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -42,9 +48,72 @@ public class AuthController {
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     private final AuthService authService;
+    private final PatientActivationService patientActivationService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(
+            AuthService authService,
+            PatientActivationService patientActivationService
+    ) {
         this.authService = authService;
+        this.patientActivationService = patientActivationService;
+    }
+
+    /**
+     * Inicia el registro a partir del DNI. Si el paciente ya fue creado por el
+     * staff y aun no tiene usuario, envia un OTP a su correo existente. Para un
+     * DNI nuevo indica al portal que debe continuar con register-patient.
+     */
+    @Operation(
+        summary = "Iniciar activacion de paciente",
+        description = "Busca el DNI sin devolver datos personales y envia un codigo cuando el perfil ya existe sin cuenta"
+    )
+    @PostMapping("/patient-activation/request")
+    public ResponseEntity<ApiResponse<PatientActivationResponse>> requestPatientActivation(
+            @Valid @RequestBody PatientActivationRequest request) {
+
+        logger.info("POST /api/auth/patient-activation/request");
+        PatientActivationResponse response =
+                patientActivationService.requestActivation(request);
+
+        return ResponseEntity.ok(
+            ApiResponse.success(response, "Solicitud de activacion procesada")
+        );
+    }
+
+    /** Verifica el OTP y entrega un token temporal sin crear credenciales. */
+    @Operation(
+        summary = "Verificar codigo de activacion",
+        description = "Valida el codigo enviado al correo y devuelve un token temporal de un solo uso"
+    )
+    @PostMapping("/patient-activation/verify-code")
+    public ResponseEntity<ApiResponse<PatientActivationVerifyCodeResponse>>
+            verifyPatientActivationCode(
+                    @Valid @RequestBody PatientActivationVerifyCodeRequest request) {
+
+        logger.info("POST /api/auth/patient-activation/verify-code");
+        PatientActivationVerifyCodeResponse response =
+                patientActivationService.verifyCode(request);
+
+        return ResponseEntity.ok(
+            ApiResponse.success(response, "Codigo de activacion verificado")
+        );
+    }
+
+    /** Crea el User PATIENT usando exclusivamente el token temporal emitido. */
+    @Operation(
+        summary = "Completar activacion de paciente",
+        description = "Crea y vincula las credenciales del paciente y devuelve un JWT"
+    )
+    @PostMapping("/patient-activation/complete")
+    public ResponseEntity<ApiResponse<LoginResponse>> completePatientActivation(
+            @Valid @RequestBody PatientActivationCompleteRequest request) {
+
+        logger.info("POST /api/auth/patient-activation/complete");
+        LoginResponse response = patientActivationService.completeActivation(request);
+
+        return ResponseEntity.ok(
+            ApiResponse.success(response, "Cuenta de paciente activada exitosamente")
+        );
     }
 
     /**
@@ -115,8 +184,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<PatientResponse>> registerPatient(
             @Valid @RequestBody RegisterPatientRequest request) {
 
-        logger.info("POST /api/auth/register-patient - Usuario: {}, DNI: {}",
-            request.username(), request.dni());
+        logger.info("POST /api/auth/register-patient - Usuario: {}", request.username());
 
         // Delegar TODA la lógica al Service
         PatientResponse response = authService.registerPatient(request);

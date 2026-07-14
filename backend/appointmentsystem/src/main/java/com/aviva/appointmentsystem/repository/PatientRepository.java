@@ -3,9 +3,12 @@ package com.aviva.appointmentsystem.repository;
 import com.aviva.appointmentsystem.entity.Patient;
 import com.aviva.appointmentsystem.entity.UserStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import jakarta.persistence.LockModeType;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +26,16 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
 
     /** Busca paciente por DNI exacto */
     Optional<Patient> findByDni(String dni);
+
+    /** Serializa solicitudes de activacion para un mismo paciente. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Patient p WHERE p.dni = :dni")
+    Optional<Patient> findByDniForUpdate(@Param("dni") String dni);
+
+    /** Evita que dos verificaciones creen cuentas para el mismo paciente. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Patient p WHERE p.id = :id")
+    Optional<Patient> findByIdForUpdate(@Param("id") Long id);
 
     /** Busca paciente por email exacto */
     Optional<Patient> findByEmail(String email);

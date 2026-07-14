@@ -11,6 +11,9 @@ Se han implementado **32 endpoints REST** siguiendo arquitectura limpia con capa
 |--------|----------|-------------|--------|
 | POST | `/api/auth/login` | Inicia sesión y devuelve token JWT | ✅ |
 | POST | `/api/auth/register-patient` | Auto-registro de pacientes | ✅ |
+| POST | `/api/auth/patient-activation/request` | Determina el alta por DNI y envía OTP al correo ya registrado | ✅ |
+| POST | `/api/auth/patient-activation/verify-code` | Verifica OTP y emite un token temporal de activación | ✅ |
+| POST | `/api/auth/patient-activation/complete` | Consume el token, vincula el `User` y devuelve JWT | ✅ |
 
 ---
 
@@ -80,11 +83,18 @@ Se han implementado **32 endpoints REST** siguiendo arquitectura limpia con capa
 
 | Método | Endpoint | Descripción | Características | Status |
 |--------|----------|-------------|-----------------|--------|
-| POST | `/api/payments/{appointmentId}/process?method=...` | Procesa pago | Cambia cita a CONFIRMED, genera comprobante | ✅ |
+| POST | `/api/payments/{paymentId}/process?method=...` | Procesa pago de staff | Cambia cita a CONFIRMED, genera comprobante | ✅ |
 | GET | `/api/payments` | Lista todos los pagos | - | ✅ |
 | GET | `/api/payments/{id}` | Obtiene pago por ID | - | ✅ |
 | GET | `/api/payments/appointment/{appointmentId}` | Pagos de cita | - | ✅ |
 | GET | `/api/payments/status/{status}` | Pagos por estado | Estados: PENDING, PAID, CANCELLED, REFUNDED | ✅ |
+| GET | `/api/payments/me` | Lista pagos propios | Resuelve paciente desde JWT | ✅ |
+| GET | `/api/payments/me/{id}` | Obtiene un pago propio | Ownership, ajeno devuelve 404 | ✅ |
+| POST | `/api/payments/me/{id}/pay` | Registra pago propio | Ownership, lock y constancia `RCP-*` | ✅ |
+
+El pago del portal solo acepta `CREDIT_CARD` o `DEBIT_CARD` para saldos
+positivos y nunca solicita números de tarjeta. Los pagos de cobertura total se
+resuelven en el servidor como `INSURANCE`.
 
 **Métodos de Pago Aceptados:**
 - `CASH` - Efectivo
@@ -129,6 +139,10 @@ Se han implementado **32 endpoints REST** siguiendo arquitectura limpia con capa
 | GET | `/api/receipts` | Lista todos los comprobantes | ✅ |
 | GET | `/api/receipts/{id}` | Obtiene comprobante por ID | ✅ |
 | GET | `/api/receipts/number/{receiptNumber}` | Obtiene comprobante por número | ✅ |
+| GET | `/api/receipts/me` | Lista constancias propias del paciente | ✅ |
+| GET | `/api/receipts/me/{id}` | Obtiene una constancia propia | ✅ |
+| GET | `/api/receipts/me/{id}/pdf` | Descarga una constancia propia como PDF | ✅ |
+| GET | `/api/receipts/me/payment/{paymentId}` | Obtiene constancia de un pago propio | ✅ |
 
 **Formato de número:** `RCP-{timestamp}-{uuid}`
 
@@ -176,6 +190,9 @@ Se han implementado **32 endpoints REST** siguiendo arquitectura limpia con capa
 | GET | `/api/patient-insurances/patient/{patientId}` | Lista seguros del paciente | - | ✅ |
 | GET | `/api/patient-insurances/patient/{patientId}/primary` | Obtiene seguro primario | RN-25 | ✅ |
 | DELETE | `/api/patient-insurances/{patientInsuranceId}` | Desvincula seguro del paciente | - | ✅ |
+| GET | `/api/patient-insurances/me` | Lista póliza propia activa | Ownership por JWT | ✅ |
+| POST | `/api/patient-insurances/me` | Vincula póliza propia opcional | Máximo una activa, sin `patientId` | ✅ |
+| DELETE | `/api/patient-insurances/me/{id}` | Desvincula una póliza propia | Ownership, ajena devuelve 404 | ✅ |
 
 **Campos Principales:**
 - `policyNumber` - Número de póliza del paciente
@@ -224,8 +241,13 @@ Se han implementado **32 endpoints REST** siguiendo arquitectura limpia con capa
 
 | Método | Endpoint | Descripción | RF Asociado | Status |
 |--------|----------|-------------|-------------|--------|
+| GET | `/api/notifications` | Historial general para staff | RF-45 | ✅ |
 | GET | `/api/notifications/user?email=...` | Lista notificaciones de usuario | RF-45 | ✅ |
+| GET | `/api/notifications/user/in-app?email=...` | Lista interna por correo para staff | RF-45 | ✅ |
 | GET | `/api/notifications/appointment/{appointmentId}` | Lista notificaciones de cita | RF-46, RF-47 | ✅ |
+| PATCH | `/api/notifications/{id}/read` | Marca lectura desde el flujo de staff | RF-48 | ✅ |
+| GET | `/api/notifications/me` | Lista interna del paciente autenticado | RF-45, RF-48 | ✅ |
+| PATCH | `/api/notifications/me/{id}/read` | Marca una notificación propia como leída | RF-48 | ✅ |
 
 **Tipos de Notificación Automáticas:**
 - `APPOINTMENT_CREATED` - Cuando se crea una cita (a paciente y doctor)
@@ -239,7 +261,6 @@ Se han implementado **32 endpoints REST** siguiendo arquitectura limpia con capa
 
 **Canales de Notificación:**
 - `EMAIL` - Correo electrónico
-- `SMS` - Mensajes de texto
 - `IN_APP` - Notificación dentro de la aplicación
 
 **Estados de Notificación:**
@@ -250,6 +271,8 @@ Se han implementado **32 endpoints REST** siguiendo arquitectura limpia con capa
 
 **Características:**
 - Notificaciones automáticas integradas en AppointmentService y PaymentService
+- Ownership del portal resuelto desde el JWT y la cita; no recibe correos ni IDs de paciente
+- Correos HTML responsive con texto plano de respaldo y plantillas centralizadas
 - Scheduler de fondo que procesa notificaciones pendientes cada minuto (RF-45)
 - Recordatorios automáticos diarios a las 6 PM (RF-47)
 - Reintentos automáticos con máximo 3 intentos
@@ -375,9 +398,10 @@ CREATE DATABASE ClinicaAviva;
 
 ## 📝 Notas
 
-- Todos los endpoints requieren token JWT (excepto `/api/auth/login` y `/api/auth/register-patient`)
+- Todos los endpoints requieren token JWT, excepto las rutas públicas bajo `/api/auth/**`.
 - Los pagos se crean automáticamente al crear una cita
 - Los comprobantes se generan automáticamente al procesar un pago
+- Las constancias se generan automáticamente con una referencia `RCP-*`
 - Los cambios de cita se registran automáticamente en auditoría
 - Todas las fechas están en ISO-8601 format
 

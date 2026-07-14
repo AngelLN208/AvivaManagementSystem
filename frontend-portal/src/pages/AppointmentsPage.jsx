@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import AppointmentCard from '../components/appointments/AppointmentCard.jsx';
 import CancelAppointmentDialog from '../components/appointments/CancelAppointmentDialog.jsx';
@@ -6,6 +6,8 @@ import RescheduleAppointmentDialog from '../components/appointments/RescheduleAp
 import { EmptyState, ErrorState, LoadingState } from '../components/ui/AsyncState.jsx';
 import InlineAlert from '../components/ui/InlineAlert.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
+import { Button } from '../components/ui/button.jsx';
+import { Card, CardContent } from '../components/ui/card.jsx';
 import { useAppointmentMutations, useMyAppointments } from '../hooks/useAppointments.js';
 import { useCurrentTime } from '../hooks/useCurrentTime.js';
 import {
@@ -26,12 +28,17 @@ export default function AppointmentsPage() {
   const { cancelAppointment, rescheduleAppointment } = useAppointmentMutations();
   const now = useCurrentTime();
   const lastDialogTrigger = useRef(null);
+  const noticeRef = useRef(null);
   const [filter, setFilter] = useState('upcoming');
   const [appointmentToCancel, setAppointmentToCancel] = useState(null);
   const [appointmentToReschedule, setAppointmentToReschedule] = useState(null);
   const [notice, setNotice] = useState(
     searchParams.get('creada') === '1' ? 'Tu cita fue agendada correctamente.' : '',
   );
+
+  useEffect(() => {
+    if (notice) noticeRef.current?.focus();
+  }, [notice]);
 
   const { upcoming, history } = useMemo(
     () => splitAppointments(appointmentsQuery.data || [], now),
@@ -92,15 +99,19 @@ export default function AppointmentsPage() {
   }
 
   return (
-    <div className="page-stack">
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Agenda personal"
         title="Mis citas"
         description="Consulta tus próximas citas y revisa las atenciones anteriores."
-        action={<Link to="/agendar" className="button button--primary">Agendar cita</Link>}
+        action={<Button asChild><Link to="/agendar">Agendar cita</Link></Button>}
       />
 
-      {notice && <InlineAlert tone="success" onDismiss={() => setNotice('')}>{notice}</InlineAlert>}
+      {notice && (
+        <div ref={noticeRef} className="outline-none" tabIndex={-1}>
+          <InlineAlert tone="success" onDismiss={() => setNotice('')}>{notice}</InlineAlert>
+        </div>
+      )}
 
       {appointmentsQuery.isLoading && <LoadingState message="Cargando tus citas…" />}
       {appointmentsQuery.isError && (
@@ -108,8 +119,9 @@ export default function AppointmentsPage() {
       )}
 
       {appointmentsQuery.isSuccess && (
-        <section className="section-card appointments-section">
-          <div className="filter-tabs" role="group" aria-label="Filtrar citas">
+        <Card>
+          <CardContent className="space-y-5">
+          <div className="inline-flex max-w-full gap-1 overflow-x-auto rounded-xl bg-muted p-1" role="group" aria-label="Filtrar citas">
             {FILTERS.map((item) => {
               const count = item.id === 'upcoming'
                 ? upcoming.length
@@ -119,10 +131,10 @@ export default function AppointmentsPage() {
                   key={item.id}
                   type="button"
                   aria-pressed={filter === item.id}
-                  className={filter === item.id ? 'is-active' : ''}
+                  className={`inline-flex min-h-9 shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition ${filter === item.id ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                   onClick={() => setFilter(item.id)}
                 >
-                  {item.label} <span>{count}</span>
+                  {item.label} <span className="rounded-full bg-muted px-1.5 py-0.5 text-[0.7rem]">{count}</span>
                 </button>
               );
             })}
@@ -135,11 +147,11 @@ export default function AppointmentsPage() {
                 ? 'Explora las especialidades disponibles y elige el horario que prefieras.'
                 : 'Tus citas aparecerán aquí cuando exista información para mostrar.'}
               action={filter === 'upcoming'
-                ? <Link to="/agendar" className="button button--primary">Agendar una cita</Link>
+                ? <Button asChild><Link to="/agendar">Agendar una cita</Link></Button>
                 : null}
             />
           ) : (
-            <div className="appointment-list">
+            <div className="space-y-4">
               {visibleAppointments.map((appointment) => (
                 <AppointmentCard
                   key={appointment.id}
@@ -151,7 +163,8 @@ export default function AppointmentsPage() {
               ))}
             </div>
           )}
-        </section>
+          </CardContent>
+        </Card>
       )}
 
       <CancelAppointmentDialog

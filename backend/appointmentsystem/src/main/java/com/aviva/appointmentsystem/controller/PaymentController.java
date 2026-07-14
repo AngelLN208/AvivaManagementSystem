@@ -1,6 +1,7 @@
 package com.aviva.appointmentsystem.controller;
 
 import com.aviva.appointmentsystem.dto.ApiResponse;
+import com.aviva.appointmentsystem.dto.PatientPaymentRequest;
 import com.aviva.appointmentsystem.dto.PaymentResponse;
 import com.aviva.appointmentsystem.entity.PaymentMethod;
 import com.aviva.appointmentsystem.entity.PaymentStatus;
@@ -10,16 +11,20 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.util.List;
 
 /**
@@ -47,6 +52,62 @@ public class PaymentController {
 
     public PaymentController(PaymentService paymentService) {
         this.paymentService = paymentService;
+    }
+
+    // ========================================================
+    // PORTAL DEL PACIENTE (/me)
+    // ========================================================
+
+    @Operation(
+        summary = "Listar mis pagos",
+        description = "Devuelve únicamente los pagos del paciente autenticado"
+    )
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<List<PaymentResponse>>> getMine(
+            Principal principal) {
+
+        List<PaymentResponse> response =
+                paymentService.getForCurrentPatient(principal.getName());
+        return ResponseEntity.ok(ApiResponse.success(
+                response, "Mis pagos obtenidos: " + response.size()));
+    }
+
+    @Operation(
+        summary = "Obtener uno de mis pagos",
+        description = "Devuelve el pago solo cuando pertenece al paciente autenticado"
+    )
+    @GetMapping("/me/{id}")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<PaymentResponse>> getMineById(
+            Principal principal,
+            @PathVariable Long id) {
+
+        PaymentResponse response = paymentService.getByIdForCurrentPatient(
+                principal.getName(), id);
+        return ResponseEntity.ok(ApiResponse.success(response, "Pago obtenido"));
+    }
+
+    @Operation(
+        summary = "Registrar el pago de una cita propia",
+        description = "Confirma una cita propia y genera su constancia. "
+                + "Métodos admitidos para saldos positivos: CREDIT_CARD y DEBIT_CARD."
+    )
+    @PostMapping("/me/{id}/pay")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<PaymentResponse>> payMine(
+            Principal principal,
+            @PathVariable Long id,
+            @Valid @RequestBody PatientPaymentRequest request) {
+
+        PaymentMethod paymentMethod = parsePaymentMethod(request.method());
+        PaymentResponse response = paymentService.payForCurrentPatient(
+                principal.getName(), id, paymentMethod);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                response,
+                "Pago registrado correctamente. Constancia generada."
+        ));
     }
 
     // ========================================================
@@ -227,5 +288,15 @@ public class PaymentController {
         PaymentResponse response = paymentService.processPayment(id, paymentMethod);
         return ResponseEntity.ok(
             ApiResponse.success(response, "Pago procesado exitosamente. Cita confirmada y comprobante generado."));
+    }
+
+    private PaymentMethod parsePaymentMethod(String method) {
+        try {
+            return PaymentMethod.valueOf(method.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                "Método de pago inválido: '" + method + "'. "
+                + "Valores válidos: CASH, CREDIT_CARD, DEBIT_CARD, TRANSFER, INSURANCE");
+        }
     }
 }

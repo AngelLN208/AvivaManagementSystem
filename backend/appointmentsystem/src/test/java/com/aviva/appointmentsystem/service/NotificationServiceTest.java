@@ -1,9 +1,16 @@
 package com.aviva.appointmentsystem.service;
 
 import com.aviva.appointmentsystem.dto.NotificationResponse;
+import com.aviva.appointmentsystem.dto.PatientNotificationResponse;
+import com.aviva.appointmentsystem.entity.Appointment;
 import com.aviva.appointmentsystem.entity.Notification;
+import com.aviva.appointmentsystem.entity.Patient;
+import com.aviva.appointmentsystem.entity.User;
+import com.aviva.appointmentsystem.entity.UserStatus;
+import com.aviva.appointmentsystem.exception.ResourceNotFoundException;
 import com.aviva.appointmentsystem.exception.ValidationException;
 import com.aviva.appointmentsystem.repository.NotificationRepository;
+import com.aviva.appointmentsystem.repository.PatientRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,11 +38,17 @@ class NotificationServiceTest {
     @Mock
     private NotificationRepository notificationRepository;
 
+    @Mock
+    private PatientRepository patientRepository;
+
     private NotificationService notificationService;
 
     @BeforeEach
     void setUp() {
-        notificationService = new NotificationService(notificationRepository);
+        notificationService = new NotificationService(
+                notificationRepository,
+                patientRepository
+        );
     }
 
     @Test
@@ -116,6 +129,52 @@ class NotificationServiceTest {
         assertEquals(notification.getId(), response.getFirst().id());
     }
 
+    @Test
+    void patientPortalListsOnlyOwnedInAppNotifications() {
+        Patient patient = activePatient(42L);
+        Appointment appointment = new Appointment();
+        appointment.setId(91L);
+        appointment.setPatient(patient);
+        Notification notification = completeNotification(
+                Notification.NotificationChannel.IN_APP);
+        notification.setAppointment(appointment);
+        notification.setCreatedAt(LocalDateTime.now());
+
+        when(patientRepository.findByUserUsername("patient.portal"))
+                .thenReturn(Optional.of(patient));
+        when(notificationRepository.findPortalNotifications(
+                patient.getId(),
+                Notification.NotificationChannel.IN_APP
+        )).thenReturn(List.of(notification));
+
+        List<PatientNotificationResponse> response =
+                notificationService.getForCurrentPatient("patient.portal");
+
+        assertEquals(1, response.size());
+        assertEquals(91L, response.getFirst().appointmentId());
+        assertFalse(response.getFirst().read());
+    }
+
+    @Test
+    void patientPortalDoesNotRevealAnUnownedNotification() {
+        Patient patient = activePatient(42L);
+        when(patientRepository.findByUserUsername("patient.portal"))
+                .thenReturn(Optional.of(patient));
+        when(notificationRepository.findOwnedPortalNotification(
+                99L,
+                patient.getId(),
+                Notification.NotificationChannel.IN_APP
+        )).thenReturn(Optional.empty());
+
+        assertThrows(
+                ResourceNotFoundException.class,
+                () -> notificationService.markAsReadForCurrentPatient(
+                        "patient.portal",
+                        99L
+                )
+        );
+    }
+
     private Notification completeNotification(Notification.NotificationChannel channel) {
         Notification notification = new Notification();
         notification.setId(10L);
@@ -135,5 +194,17 @@ class NotificationServiceTest {
     private void returnSavedNotification() {
         when(notificationRepository.save(any(Notification.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+    }
+
+    private Patient activePatient(Long id) {
+        User user = new User();
+        user.setUsername("patient.portal");
+        user.setStatus(UserStatus.ACTIVE);
+
+        Patient patient = new Patient();
+        patient.setId(id);
+        patient.setUser(user);
+        patient.setStatus(UserStatus.ACTIVE);
+        return patient;
     }
 }

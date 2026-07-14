@@ -7,10 +7,13 @@ frontends React separados para el personal y los pacientes.
 
 El sistema permite al personal gestionar citas, pacientes, médicos, horarios,
 pagos, notificaciones y procesos de atención según su rol. El portal del
-paciente permite autorregistro y autogestión de citas propias.
+paciente permite autorregistro, activación verificada de perfiles ya existentes,
+autogestión de citas, una póliza opcional y consulta/pago de obligaciones propias.
 
-En esta fase el portal paciente **no incluye** pagos, información clínica,
-diagnósticos, triaje, seguros ni resultados médicos.
+El portal registra pagos propios usando los medios permitidos por el backend y
+genera su constancia. No recibe ni almacena números de tarjeta. La información
+clínica, diagnósticos, triaje y resultados médicos permanecen fuera del portal
+del paciente.
 
 ## Tecnologías
 

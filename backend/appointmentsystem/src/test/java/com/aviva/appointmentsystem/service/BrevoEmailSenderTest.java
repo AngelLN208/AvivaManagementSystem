@@ -63,4 +63,36 @@ class BrevoEmailSenderTest {
                 () -> sender.send("patient@example.com", "Asunto", "Mensaje")
         );
     }
+
+    @Test
+    void sendIncludesHtmlAndPlainTextWhenTemplateIsAvailable() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        BrevoEmailSender sender = new BrevoEmailSender(
+                builder,
+                "https://api.brevo.com/v3",
+                "test-api-key",
+                "clnicaviva@gmail.com",
+                "Clinica Aviva"
+        );
+
+        server.expect(requestTo("https://api.brevo.com/v3/smtp/email"))
+                .andExpect(content().json("""
+                        {
+                          "subject": "Cita creada",
+                          "textContent": "Tu cita fue creada",
+                          "htmlContent": "<html><body>Cita creada</body></html>"
+                        }
+                        """))
+                .andRespond(withSuccess("{\"messageId\":\"test-id\"}", MediaType.APPLICATION_JSON));
+
+        sender.send(
+                "patient@example.com",
+                "Cita creada",
+                "Tu cita fue creada",
+                "<html><body>Cita creada</body></html>"
+        );
+
+        server.verify();
+    }
 }

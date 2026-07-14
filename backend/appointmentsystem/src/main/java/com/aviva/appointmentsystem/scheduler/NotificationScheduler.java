@@ -1,7 +1,9 @@
 package com.aviva.appointmentsystem.scheduler;
 
 import com.aviva.appointmentsystem.entity.Notification;
+import com.aviva.appointmentsystem.service.EmailContent;
 import com.aviva.appointmentsystem.service.EmailSender;
+import com.aviva.appointmentsystem.service.EmailTemplateService;
 import com.aviva.appointmentsystem.service.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,13 +32,16 @@ public class NotificationScheduler {
 
     private final NotificationService notificationService;
     private final EmailSender emailSender;
+    private final EmailTemplateService emailTemplateService;
 
     public NotificationScheduler(
             NotificationService notificationService,
-            EmailSender emailSender
+            EmailSender emailSender,
+            EmailTemplateService emailTemplateService
     ) {
         this.notificationService = notificationService;
         this.emailSender = emailSender;
+        this.emailTemplateService = emailTemplateService;
     }
 
     /**
@@ -82,10 +87,12 @@ public class NotificationScheduler {
         }
 
         try {
+            EmailContent email = emailTemplateService.notification(notification);
             emailSender.send(
                     notification.getRecipientEmail(),
-                    notification.getSubject(),
-                    notification.getMessage()
+                    email.subject(),
+                    email.textContent(),
+                    email.htmlContent()
             );
 
             notificationService.markAsSent(notification.getId());

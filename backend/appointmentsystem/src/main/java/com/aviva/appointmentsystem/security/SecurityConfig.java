@@ -25,7 +25,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  * Reglas:
  * 1. Rutas de Swagger (/v3/api-docs/**, /swagger-ui/**, /swagger-ui.html) → PÚBLICAS
  * 2. Rutas de Auth (/api/auth/**) → PÚBLICAS (login y registro)
- * 3. PATIENT solo accede a catálogos, disponibilidad y rutas /appointments/me
+ * 3. PATIENT accede a catálogos y a variantes /me con ownership validado
  * 4. El resto de /api/** requiere un rol de staff
  * 5. CSRF deshabilitado (API REST stateless)
  * 6. Sesiones STATELESS (no se guardan sesiones del servidor)
@@ -114,7 +114,8 @@ public class SecurityConfig {
                     "/api/specialties",
                     "/api/specialties/**",
                     "/api/doctors",
-                    "/api/doctors/**"
+                    "/api/doctors/**",
+                    "/api/insurances"
                 ).hasAnyRole("PATIENT", "ADMIN", "RECEPTIONIST", "DOCTOR")
 
                 // Disponibilidad: necesaria tanto para staff como para pacientes.
@@ -126,8 +127,26 @@ public class SecurityConfig {
                 // Portal: solo el paciente autenticado; ownership se valida en Service.
                 .requestMatchers(
                     "/api/appointments/me",
-                    "/api/appointments/me/**"
+                    "/api/appointments/me/**",
+                    "/api/patient-insurances/me",
+                    "/api/patient-insurances/me/**",
+                    "/api/payments/me",
+                    "/api/payments/me/**",
+                    "/api/receipts/me",
+                    "/api/receipts/me/**",
+                    "/api/notifications/me",
+                    "/api/notifications/me/**"
                 ).hasRole("PATIENT")
+
+                // Los pagos y comprobantes globales son operaciones de caja.
+                // El médico no debe procesarlos ni consultar datos financieros
+                // de pacientes fuera de las variantes /me.
+                .requestMatchers(
+                    "/api/payments",
+                    "/api/payments/**",
+                    "/api/receipts",
+                    "/api/receipts/**"
+                ).hasAnyRole("ADMIN", "RECEPTIONIST")
 
                 // Lecturas generales conservadas para el personal autorizado.
                 .requestMatchers(

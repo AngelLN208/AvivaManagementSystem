@@ -87,6 +87,13 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- Generación de constancias PDF descargables desde el portal paciente. -->
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+			<version>3.0.8</version>
+		</dependency>
+
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>

@@ -1,11 +1,16 @@
 package com.aviva.appointmentsystem.service;
 
 import com.aviva.appointmentsystem.dto.NotificationResponse;
+import com.aviva.appointmentsystem.dto.PatientNotificationResponse;
 import com.aviva.appointmentsystem.entity.Appointment;
 import com.aviva.appointmentsystem.entity.Notification;
+import com.aviva.appointmentsystem.entity.Patient;
+import com.aviva.appointmentsystem.entity.UserStatus;
 import com.aviva.appointmentsystem.exception.ResourceNotFoundException;
+import com.aviva.appointmentsystem.exception.UserInactiveException;
 import com.aviva.appointmentsystem.exception.ValidationException;
 import com.aviva.appointmentsystem.repository.NotificationRepository;
+import com.aviva.appointmentsystem.repository.PatientRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -25,9 +30,14 @@ public class NotificationService {
     private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
 
     private final NotificationRepository notificationRepository;
+    private final PatientRepository patientRepository;
 
-    public NotificationService(NotificationRepository notificationRepository) {
+    public NotificationService(
+            NotificationRepository notificationRepository,
+            PatientRepository patientRepository
+    ) {
         this.notificationRepository = notificationRepository;
+        this.patientRepository = patientRepository;
     }
 
     /**
@@ -229,6 +239,22 @@ public class NotificationService {
     }
 
     /**
+     * Lista las notificaciones internas del paciente autenticado. El username
+     * proviene del JWT y el repositorio valida ownership mediante la cita.
+     */
+    @Transactional(readOnly = true)
+    public List<PatientNotificationResponse> getForCurrentPatient(String username) {
+        Patient patient = requirePatientProfile(username);
+        return notificationRepository.findPortalNotifications(
+                        patient.getId(),
+                        Notification.NotificationChannel.IN_APP
+                )
+                .stream()
+                .map(this::mapToPatientResponse)
+                .toList();
+    }
+
+    /**
      * Marca como leida una notificacion interna. La operacion es idempotente:
      * una segunda llamada conserva la fecha de la primera lectura.
      */
@@ -236,19 +262,30 @@ public class NotificationService {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notificacion", notificationId));
 
-        if (notification.getChannel() != Notification.NotificationChannel.IN_APP) {
-            throw new ValidationException(
-                    "Solo las notificaciones internas pueden marcarse como leidas"
-            );
-        }
+        return mapToResponse(markInternalAsRead(notification));
+    }
 
-        if (!Boolean.TRUE.equals(notification.getRead())) {
-            notification.setRead(true);
-            notification.setReadAt(LocalDateTime.now());
-            notification = notificationRepository.save(notification);
-        }
+    /**
+     * Marca una notificación propia como leída. Una notificación inexistente y
+     * una ajena producen la misma respuesta 404 para no revelar recursos.
+     */
+    public PatientNotificationResponse markAsReadForCurrentPatient(
+            String username,
+            Long notificationId
+    ) {
+        Patient patient = requirePatientProfile(username);
+        Notification notification = notificationRepository
+                .findOwnedPortalNotification(
+                        notificationId,
+                        patient.getId(),
+                        Notification.NotificationChannel.IN_APP
+                )
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Notificación",
+                        notificationId
+                ));
 
-        return mapToResponse(notification);
+        return mapToPatientResponse(markInternalAsRead(notification));
     }
 
     /**
@@ -288,5 +325,51 @@ public class NotificationService {
             notification.getUpdatedAt()
             
         );
+    }
+
+    private PatientNotificationResponse mapToPatientResponse(Notification notification) {
+        return new PatientNotificationResponse(
+                notification.getId(),
+                notification.getType().name(),
+                notification.getAppointment() != null
+                        ? notification.getAppointment().getId()
+                        : null,
+                notification.getSubject(),
+                notification.getMessage(),
+                Boolean.TRUE.equals(notification.getRead()),
+                notification.getReadAt(),
+                notification.getCreatedAt()
+        );
+    }
+
+    private Notification markInternalAsRead(Notification notification) {
+        if (notification.getChannel() != Notification.NotificationChannel.IN_APP) {
+            throw new ValidationException(
+                    "Solo las notificaciones internas pueden marcarse como leídas"
+            );
+        }
+
+        if (!Boolean.TRUE.equals(notification.getRead())) {
+            notification.setRead(true);
+            notification.setReadAt(LocalDateTime.now());
+            return notificationRepository.save(notification);
+        }
+
+        return notification;
+    }
+
+    private Patient requirePatientProfile(String username) {
+        Patient patient = patientRepository.findByUserUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No existe un perfil de paciente asociado al usuario autenticado"
+                ));
+
+        if (patient.getStatus() != UserStatus.ACTIVE
+                || patient.getUser() == null
+                || patient.getUser().getStatus() != UserStatus.ACTIVE) {
+            throw new UserInactiveException(username);
+        }
+
+        return patient;
     }
 }

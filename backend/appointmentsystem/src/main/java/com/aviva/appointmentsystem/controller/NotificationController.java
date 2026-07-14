@@ -2,6 +2,7 @@ package com.aviva.appointmentsystem.controller;
 
 import com.aviva.appointmentsystem.dto.ApiResponse;
 import com.aviva.appointmentsystem.dto.NotificationResponse;
+import com.aviva.appointmentsystem.dto.PatientNotificationResponse;
 import com.aviva.appointmentsystem.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.util.List;
 
 /**
@@ -79,6 +81,43 @@ public class NotificationController {
 
         return ResponseEntity.ok(
                 ApiResponse.success(response, "Notificaciones internas obtenidas: " + response.size())
+        );
+    }
+
+    /** Lista únicamente las notificaciones internas del paciente del JWT. */
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('PATIENT')")
+    @Operation(summary = "Listar mis notificaciones internas")
+    public ResponseEntity<ApiResponse<List<PatientNotificationResponse>>> getMine(
+            Principal principal
+    ) {
+        List<PatientNotificationResponse> response =
+                notificationService.getForCurrentPatient(principal.getName());
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        response,
+                        "Notificaciones internas obtenidas: " + response.size()
+                )
+        );
+    }
+
+    /** Marca como leída una notificación que pertenece al paciente del JWT. */
+    @PatchMapping("/me/{notificationId}/read")
+    @PreAuthorize("hasRole('PATIENT')")
+    @Operation(summary = "Marcar mi notificación como leída")
+    public ResponseEntity<ApiResponse<PatientNotificationResponse>> markMineAsRead(
+            Principal principal,
+            @PathVariable Long notificationId
+    ) {
+        PatientNotificationResponse response =
+                notificationService.markAsReadForCurrentPatient(
+                        principal.getName(),
+                        notificationId
+                );
+
+        return ResponseEntity.ok(
+                ApiResponse.success(response, "Notificación marcada como leída")
         );
     }
 

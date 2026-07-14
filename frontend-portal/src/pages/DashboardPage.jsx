@@ -1,6 +1,15 @@
+import { CalendarDays, CheckCircle2, ChevronRight, Clock3, Plus, Stethoscope } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import AppointmentCard from '../components/appointments/AppointmentCard.jsx';
 import { ErrorState, LoadingState } from '../components/ui/AsyncState.jsx';
+import { Button } from '../components/ui/button.jsx';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../components/ui/card.jsx';
 import { useAuth } from '../hooks/useAuth.js';
 import { useMyAppointments } from '../hooks/useAppointments.js';
 import { useCurrentTime } from '../hooks/useCurrentTime.js';
@@ -12,25 +21,40 @@ export default function DashboardPage() {
   const now = useCurrentTime();
   const { upcoming, history } = splitAppointments(appointmentsQuery.data || [], now);
   const completedCount = history.filter((appointment) => appointment.status === 'COMPLETED').length;
+  const displayName = session?.firstName || session?.username;
+  const today = new Date();
+  const dayLabel = new Intl.DateTimeFormat('es-PE', { weekday: 'long', day: 'numeric', month: 'long' })
+    .format(today);
 
   return (
-    <div className="page-stack">
-      <section className="welcome-hero">
-        <div className="welcome-hero__copy">
-          <p className="eyebrow eyebrow--light">Tu portal Aviva</p>
-          <h1>Hola, {session?.firstName || session?.username}</h1>
-          <p>Organiza tus próximas citas y encuentra el horario que mejor se adapte a ti.</p>
-          <div className="welcome-hero__actions">
-            <Link to="/agendar" className="button button--light">Agendar una cita</Link>
-            <Link to="/citas" className="button button--glass">Ver mis citas</Link>
+    <div className="space-y-6 lg:space-y-8">
+      <section className="relative overflow-hidden rounded-3xl border border-primary/15 bg-card px-6 py-7 shadow-sm sm:px-8 sm:py-9">
+        <div className="absolute -right-16 -top-20 size-64 rounded-full bg-primary/8 blur-3xl" aria-hidden="true" />
+        <div className="relative grid items-center gap-8 lg:grid-cols-[1fr_auto]">
+          <div className="max-w-2xl">
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Portal del paciente</p>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              Hola, {displayName}
+            </h1>
+            <p className="mb-0 mt-3 max-w-xl text-base leading-7 text-muted-foreground">
+              Consulta tu agenda, encuentra a tu especialista y administra tus citas desde un solo lugar.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Button asChild size="lg">
+                <Link to="/agendar"><Plus />Agendar una cita</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <Link to="/citas">Ver mis citas<ChevronRight /></Link>
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className="welcome-hero__visual" aria-hidden="true">
-          <div className="calendar-illustration">
-            <span className="calendar-illustration__rings" />
-            <strong>{new Date().getDate()}</strong>
-            <small>{new Intl.DateTimeFormat('es-PE', { month: 'short' }).format(new Date())}</small>
-            <span className="calendar-illustration__check">✓</span>
+
+          <div className="hidden min-w-52 rounded-2xl border border-border bg-background/90 p-5 shadow-sm lg:block" aria-hidden="true">
+            <div className="flex items-center gap-3 text-primary">
+              <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10"><CalendarDays className="size-5" /></span>
+              <span className="text-sm font-semibold capitalize">{dayLabel}</span>
+            </div>
+            <p className="mb-0 mt-4 text-sm leading-6 text-muted-foreground">Tu información se mantiene organizada y disponible cuando la necesites.</p>
           </div>
         </div>
       </section>
@@ -42,54 +66,92 @@ export default function DashboardPage() {
 
       {appointmentsQuery.isSuccess && (
         <>
-          <section className="stats-grid" aria-label="Resumen de citas">
-            <article className="stat-card stat-card--primary">
-              <span className="stat-card__label">Próximas citas</span>
-              <strong>{upcoming.length}</strong>
-              <small>{upcoming.length === 1 ? 'cita programada' : 'citas programadas'}</small>
-            </article>
-            <article className="stat-card">
-              <span className="stat-card__label">Atenciones completadas</span>
-              <strong>{completedCount}</strong>
-              <small>registradas en tu historial de citas</small>
-            </article>
-            <article className="stat-card stat-card--action">
-              <span className="stat-card__label">¿Necesitas una cita?</span>
-              <strong>Elige día y hora</strong>
-              <Link to="/agendar">Revisar disponibilidad <span aria-hidden="true">→</span></Link>
-            </article>
+          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Resumen de citas">
+            <MetricCard
+              icon={CalendarDays}
+              label="Próximas citas"
+              value={upcoming.length}
+              detail={upcoming.length === 1 ? 'cita programada' : 'citas programadas'}
+            />
+            <MetricCard
+              icon={CheckCircle2}
+              label="Atenciones completadas"
+              value={completedCount}
+              detail="en tu historial"
+            />
+            <Card className="border-primary/15 bg-primary text-primary-foreground">
+              <CardHeader>
+                <span className="mb-2 flex size-10 items-center justify-center rounded-xl bg-white/12"><Clock3 className="size-5" /></span>
+                <CardDescription className="font-semibold text-primary-foreground/75">Disponibilidad en línea</CardDescription>
+                <CardTitle className="text-xl">Elige el día y la hora</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Link to="/agendar" className="inline-flex items-center gap-1 text-sm font-bold text-primary-foreground hover:underline">
+                  Revisar horarios <ChevronRight className="size-4" />
+                </Link>
+              </CardContent>
+            </Card>
           </section>
 
-          <section className="section-card">
-            <div className="section-heading">
+          <Card>
+            <CardHeader className="sm:grid-cols-[1fr_auto]">
               <div>
-                <p className="eyebrow">Agenda personal</p>
-                <h2>{upcoming.length ? 'Tu próxima cita' : 'Aún no tienes citas próximas'}</h2>
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-primary">Agenda personal</p>
+                <CardTitle className="text-xl sm:text-2xl">
+                  {upcoming.length ? 'Tu próxima cita' : 'Aún no tienes citas próximas'}
+                </CardTitle>
+                <CardDescription className="mt-2">Mantén a la vista la información más importante de tu atención.</CardDescription>
               </div>
-              {upcoming.length > 0 && <Link to="/citas" className="text-link">Ver todas</Link>}
-            </div>
+              {upcoming.length > 0 && (
+                <Button asChild variant="ghost" className="mt-3 justify-start sm:mt-0">
+                  <Link to="/citas">Ver todas<ChevronRight /></Link>
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent>
+              {upcoming.length > 0 ? (
+                <AppointmentCard appointment={upcoming[0]} compact />
+              ) : (
+                <div className="flex flex-col items-start gap-4 rounded-2xl border border-dashed border-border bg-muted/40 p-6 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="m-0 font-semibold text-foreground">Tu agenda está disponible</p>
+                    <p className="mb-0 mt-1 text-sm text-muted-foreground">Agenda una cita y podrás consultarla aquí rápidamente.</p>
+                  </div>
+                  <Button asChild><Link to="/agendar"><Plus />Agendar cita</Link></Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-            {upcoming.length > 0 ? (
-              <AppointmentCard appointment={upcoming[0]} compact />
-            ) : (
-              <div className="dashboard-empty">
-                <span aria-hidden="true">+</span>
-                <p>Cuando agendes una cita, aparecerá aquí para que la tengas siempre a la vista.</p>
-                <Link to="/agendar" className="button button--primary">Agendar mi primera cita</Link>
+          <section className="flex flex-col gap-5 rounded-2xl border border-border bg-muted/45 p-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex gap-4">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-background text-primary shadow-sm ring-1 ring-border">
+                <Stethoscope className="size-5" aria-hidden="true" />
+              </span>
+              <div>
+                <h2 className="m-0 text-lg font-semibold text-foreground">Prepárate para tu próxima atención</h2>
+                <p className="mb-0 mt-1 text-sm text-muted-foreground">Llega 15 minutos antes y ten a la mano tu documento de identidad.</p>
               </div>
-            )}
-          </section>
-
-          <section className="support-strip">
-            <div>
-              <p className="eyebrow">Antes de tu cita</p>
-              <h2>Llega con 15 minutos de anticipación</h2>
-              <p>Ten a la mano tu documento de identidad para agilizar tu atención.</p>
             </div>
-            <Link to="/medicos" className="button button--secondary">Conocer especialistas</Link>
+            <Button asChild variant="outline"><Link to="/medicos">Conocer especialistas</Link></Button>
           </section>
         </>
       )}
     </div>
+  );
+}
+
+function MetricCard({ icon: Icon, label, value, detail }) {
+  return (
+    <Card>
+      <CardHeader>
+        <span className="mb-2 flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Icon className="size-5" aria-hidden="true" />
+        </span>
+        <CardDescription className="font-semibold">{label}</CardDescription>
+        <CardTitle className="text-3xl">{value}</CardTitle>
+      </CardHeader>
+      <CardContent><p className="m-0 text-sm text-muted-foreground">{detail}</p></CardContent>
+    </Card>
   );
 }

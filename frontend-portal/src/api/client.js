@@ -40,8 +40,9 @@ apiClient.interceptors.response.use(
 
     const authorization = error.config?.headers?.get?.('Authorization')
       || error.config?.headers?.Authorization;
-    const isLoginRequest = String(error.config?.url || '').endsWith('/auth/login');
-    if (apiError.status === 401 && (authorization || !isLoginRequest)) {
+    const requestUrl = String(error.config?.url || '');
+    const isPublicAuthRequest = requestUrl.startsWith('/auth/');
+    if (apiError.status === 401 && (authorization || !isPublicAuthRequest)) {
       clearPortalSession();
       window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
     }

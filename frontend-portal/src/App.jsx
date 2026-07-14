@@ -7,6 +7,9 @@ import DashboardPage from './pages/DashboardPage.jsx';
 import DoctorsPage from './pages/DoctorsPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
+import NotificationsPage from './pages/NotificationsPage.jsx';
+import InsurancePage from './pages/InsurancePage.jsx';
+import PaymentsPage from './pages/PaymentsPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import SchedulePage from './pages/SchedulePage.jsx';
 
@@ -22,7 +25,10 @@ export default function App() {
         <Route element={<PortalLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="/citas" element={<AppointmentsPage />} />
+          <Route path="/notificaciones" element={<NotificationsPage />} />
           <Route path="/agendar" element={<SchedulePage />} />
+          <Route path="/pagos" element={<PaymentsPage />} />
+          <Route path="/seguro" element={<InsurancePage />} />
           <Route path="/medicos" element={<DoctorsPage />} />
         </Route>
       </Route>

@@ -1,8 +1,11 @@
 package com.aviva.appointmentsystem.repository;
 
 import com.aviva.appointmentsystem.entity.Patient;
+import com.aviva.appointmentsystem.entity.Insurance;
 import com.aviva.appointmentsystem.entity.PatientInsurance;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -19,7 +22,19 @@ public interface PatientInsuranceRepository extends JpaRepository<PatientInsuran
     List<PatientInsurance> findByPatient(Patient patient);
     List<PatientInsurance> findByPatientAndActive(Patient patient, Boolean active);
     Optional<PatientInsurance> findByPatientAndIsPrimary(Patient patient, Boolean isPrimary);
-    List<PatientInsurance> findByPatientAndInsuranceIdAndActive(Long patientId, Long insuranceId, Boolean active);
+    Optional<PatientInsurance> findByPatientAndInsurance(Patient patient, Insurance insurance);
+    List<PatientInsurance> findByPatientIdAndInsuranceIdAndActive(Long patientId, Long insuranceId, Boolean active);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT pi FROM PatientInsurance pi WHERE pi.id = :id")
+    Optional<PatientInsurance> findByIdForUpdate(@Param("id") Long id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT pi FROM PatientInsurance pi WHERE pi.id = :id AND pi.patient = :patient")
+    Optional<PatientInsurance> findOwnedByIdForUpdate(
+            @Param("id") Long id,
+            @Param("patient") Patient patient);
+
     @Query("""
     SELECT pi
     FROM PatientInsurance pi

@@ -211,3 +211,310 @@ expone esos módulos como autoservicio para `PATIENT` en esta fase.
 
 La guía de ejecución, configuración y estructura quedó registrada en
 `frontend-portal/README.md`.
+
+## Fase 3 - Activación, seguro opcional y pagos del portal (14 de julio de 2026)
+
+Esta fase amplía el alcance histórico descrito en la Fase 2. La información
+clínica continúa excluida, pero el paciente ahora puede activar un perfil ya
+existente, registrar una póliza opcional y gestionar pagos propios.
+
+### Activación segura de un paciente existente
+
+- El registro comienza con el DNI, pero no consume la búsqueda administrativa
+  de pacientes ni devuelve sus datos personales.
+- Si el DNI es nuevo, se conserva el autorregistro que crea `User + Patient`.
+- Si el staff ya creó el paciente y todavía no tiene cuenta, se envía un OTP de
+  seis dígitos al correo que ya figura en el perfil. El código se verifica en
+  una pantalla independiente y las credenciales se crean recién en el paso
+  siguiente; únicamente se agrega un `User` con rol `PATIENT` al mismo
+  `Patient`.
+- Si ya existe una cuenta, el portal dirige al inicio de sesión; si el perfil no
+  está activo o no tiene correo, deriva al staff.
+- El OTP se persiste solo como hash, vence en 10 minutos, admite cinco intentos
+  y queda invalidado al usarse. Hay un cooldown de 60 segundos y un máximo de
+  cinco solicitudes por hora.
+- Una verificación correcta emite un token aleatorio de finalización válido por
+  cinco minutos. El backend guarda solo su hash, el frontend lo conserva en
+  memoria y un reenvío invalida códigos y tokens anteriores.
+- La activación usa locks en orden `Patient -> Challenge`; así dos verificaciones
+  no pueden crear cuentas duplicadas y no se introduce un deadlock con reenvíos.
+- Una carrera por el mismo username se traduce a `409`; el límite de solicitudes
+  devuelve `429`. El código OTP no se escribe en logs y el autorregistro del
+  portal dejó de registrar el DNI en sus mensajes de aplicación.
+
+Endpoints públicos agregados:
+
+| Método | Ruta | Resultado |
+|---|---|---|
+| `POST` | `/api/auth/patient-activation/request` | `NEW_PATIENT`, `VERIFICATION_REQUIRED`, `ACCOUNT_EXISTS` o `CONTACT_STAFF` |
+| `POST` | `/api/auth/patient-activation/verify-code` | Verifica únicamente el OTP y emite un token temporal |
+| `POST` | `/api/auth/patient-activation/complete` | Crea y vincula el `User` usando el token temporal; devuelve el JWT |
+
+### Seguro opcional
+
+- Después del alta o activación se ofrece un paso protegido que puede omitirse.
+- El portal permite cero o una póliza activa. La primera se fuerza como primaria
+  en el backend, aunque el cliente no envía `isPrimary`.
+- Ninguna operación recibe `patientId`: el paciente se resuelve desde el JWT y
+  una vinculación ajena responde igual que una inexistente.
+- Se bloquea el perfil durante el alta para que dos solicitudes simultáneas no
+  superen el límite de una póliza activa.
+- Reutilizar la misma aseguradora reactiva la fila existente, respetando la
+  restricción única `(patient_id, insurance_id)`.
+- La póliza se aplica a citas creadas después de vincularla. No se recalculan
+  pagos pendientes de citas anteriores.
+
+Endpoints agregados:
+
+| Método | Ruta | Acceso |
+|---|---|---|
+| `GET` | `/api/insurances` | Catálogo de lectura para `PATIENT` y staff |
+| `GET` | `/api/patient-insurances/me` | Póliza propia activa |
+| `POST` | `/api/patient-insurances/me` | Vincular póliza propia |
+| `DELETE` | `/api/patient-insurances/me/{id}` | Desvincular póliza propia |
+
+### Pagos y constancias del portal
+
+- El portal lista exclusivamente pagos y constancias del paciente autenticado.
+- El pago propio solo permite tarjeta de crédito o débito para saldos positivos
+  y no recibe números de tarjeta, montos ni identidad del paciente desde el cliente.
+- Una cobertura del 100 % se resuelve en el servidor como `INSURANCE`.
+- Todos los pagos confirmados usan el modelo histórico `Payment` y generan una
+  constancia con referencia `RCP-*`, sin agregar un indicador de origen.
+- Un lock pesimista sobre el pago serializa dobles clics. Solo `PENDING` puede
+  pasar a `PAID`, y la cita debe estar futura en `PENDING` o `RESCHEDULED`.
+- Pagos `PAID`, `CANCELLED` o `REFUNDED`, citas canceladas/completadas/vencidas
+  y recursos ajenos se rechazan sin modificar estados.
+- Cancelar una cita desde el portal también cancela su pago pendiente. Si el
+  pago ya está confirmado, se exige un flujo explícito de reembolso antes de
+  cancelar; no se infiere su origen por método, auditoría ni referencia.
+- La cobertura anual se vuelve a validar con lock dentro de la misma transacción.
+- Las rutas financieras generales quedaron limitadas a `ADMIN` y
+  `RECEPTIONIST`; `DOCTOR` no puede consultar ni procesar pagos globales.
+
+Endpoints agregados:
+
+| Método | Ruta | Acceso |
+|---|---|---|
+| `GET` | `/api/payments/me` | Pagos propios |
+| `GET` | `/api/payments/me/{id}` | Un pago propio |
+| `POST` | `/api/payments/me/{id}/pay` | Pago propio con `{ "method": "DEBIT_CARD" }` |
+| `GET` | `/api/receipts/me` | Constancias propias |
+| `GET` | `/api/receipts/me/{id}` | Una constancia propia |
+| `GET` | `/api/receipts/me/payment/{paymentId}` | Constancia de un pago propio |
+
+### Cambios de datos y compatibilidad
+
+- Hibernate crea `patient_activation_challenges` con UUID, hash, intentos,
+  expiración, consumo e índice por paciente/fecha.
+- El esquema y los DTO históricos de `Payment` y `Receipt` se mantienen sin
+  agregar indicadores específicos del portal.
+- Se conservan los endpoints generales de registro, seguros, pagos y
+  comprobantes para el staff.
+- La contraseña de nuevos autorregistros y activaciones exige ahora un mínimo de
+  ocho caracteres; el login sigue aceptando las cuentas históricas existentes.
+
+### Registro de archivos
+
+- Activación: `AuthController`, `PatientActivationService`, entidad/repositorio
+  de challenges, seis DTOs, dos excepciones, `PatientRepository` y sus pruebas.
+- Seguro: `PatientInsuranceController`, `PatientInsuranceService`,
+  `PatientInsuranceRepository`, `PortalPatientInsuranceRequest` y sus pruebas.
+- Pagos: controladores, servicios, repositorios y DTOs de `Payment`/`Receipt`,
+  reglas de ownership/cancelación de `AppointmentService` y pruebas.
+- Seguridad/configuración: `SecurityConfig`, `RegisterPatientRequest` y ejemplos
+  de CORS/correo.
+- Frontend: rutas, cliente API, contexto de sesión, wizard de registro, páginas
+  de seguro/pagos, hooks, componentes, utilidades, estilos y pruebas.
+
+### Verificación
+
+- Backend: `mvn test` ejecutó **94 pruebas**, con 0 fallos, 0 errores y 0
+  omitidas (`BUILD SUCCESS`). Incluye contexto H2, roles HTTP, ownership,
+  activación, seguro, pagos, constancias y compatibilidad de cancelación staff.
+- Frontend: `npm test` aprobó **25 pruebas**, `npm run lint` no reportó errores
+  y `npm run build` generó correctamente el bundle de producción.
+- `git diff --check` no encontró errores de whitespace.
+- Revisión visual local: registro verificado en escritorio y a 390 px, sin
+  desbordamiento horizontal ni errores de consola. La instancia de backend que
+  ya estaba abierta durante esa revisión no contenía aún estas rutas nuevas;
+  la integración HTTP actualizada quedó validada por MockMvc.
+
+## Fase 4 - Rediseño profesional del portal (14 de julio de 2026)
+
+### Sistema visual
+
+- Se integró Tailwind CSS v4 mediante el plugin oficial para Vite y se creó una
+  base local de componentes shadcn/ui estilo `new-york` en JavaScript.
+- La configuración incluye alias `@`, `components.json`, `jsconfig.json`, la
+  utilidad `cn` y primitives de botón, tarjeta, campo, etiqueta, badge, alerta y
+  diálogo. El código de cada primitive queda dentro del repositorio.
+- La interfaz carga Manrope localmente, mantiene tema claro/oscuro y usa tokens
+  semánticos adaptados a la paleta teal, navy y menta de Aviva.
+- Los resets heredados se movieron a la capa `base` y sus radios se aislaron
+  con nombres propios para que no anulen colores, foco ni escala de Tailwind.
+- El logo real `src/assets/aviva.png` sustituyó la marca recreada con texto. Un
+  componente dedicado corrige mediante recorte CSS el espacio transparente del
+  PNG sin alterar el archivo original.
+
+### Navegación y pantallas
+
+- En escritorio se usa una barra lateral fija con `Agendar cita` como acción
+  principal. En móvil se usa un drawer de Radix/shadcn con foco atrapado,
+  cierre por Escape y restauración del foco.
+- Login, registro por pasos, inicio, citas, agendamiento, médicos, pagos,
+  seguros y estados vacíos/error se migraron a la nueva jerarquía visual.
+- Se conservaron payloads, hooks, cachés, reglas de ownership, OTP, validaciones
+  y comportamientos de los formularios; la migración es de presentación.
+- Se preservaron skip link, foco al navegar, labels, mensajes accesibles,
+  `prefers-reduced-motion`, responsive y estilos de impresión.
+
+### Presentación de pagos
+
+- El paciente ve acciones neutrales como `Registrar pago`, `Pago registrado` y
+  `Constancia de pago`; el portal consume el endpoint propio `/pay`.
+- Las constancias nuevas usan referencia `RCP-*` y descripciones profesionales.
+  En datos históricos, el frontend oculta referencias técnicas y compone una
+  descripción pública controlada sin inventar un identificador distinto.
+- Correos, notificaciones, logs y auditoría usan el flujo estándar de pago
+  confirmado.
+
+### Registro de archivos
+
+- Configuración: `package.json`, lockfile, `vite.config.js`, `components.json`,
+  `jsconfig.json` y `styles.css`.
+- Marca y UI: `AvivaLogo`, `lib/utils` y primitives en `components/ui`.
+- Experiencia: layout/sidebar móvil, páginas públicas y protegidas, componentes
+  de citas, seguros, pagos y constancias.
+- Backend: presentación de constancia/notificación en `PaymentService`, contrato
+  descriptivo de `PaymentController` y pruebas relacionadas.
+
+### Verificación
+
+- Backend: `mvn test` pasó con 94/94 pruebas.
+- Portal: `npm test` pasó con 27/27 pruebas; `npm run lint` y
+  `npm run build` terminaron correctamente.
+- `git diff --check` no encontró errores de whitespace.
+- Revisión visual del build en escritorio y a 390 px: login y registro usan el
+  logo real, conservan contraste y jerarquía, y no presentan overflow horizontal.
+
+## Fase 5 - Normalización del contrato de pagos (14 de julio de 2026)
+
+### Decisión
+
+- El portal registra un pago normal mediante
+  `POST /api/payments/me/{paymentId}/pay` y el DTO `PatientPaymentRequest`.
+- `Payment`, `PaymentResponse` y `ReceiptResponse` conservan exactamente su
+  estructura histórica: no incorporan un indicador exclusivo del portal.
+- La auditoría vuelve a utilizar `PAYMENT_CONFIRMED`, las constancias mantienen
+  referencias `RCP-*` y las notificaciones usan el mensaje estándar de pago
+  confirmado.
+
+### Compatibilidad del backend
+
+- Los endpoints históricos de pagos y comprobantes del staff no cambiaron,
+  incluido `POST /api/payments/{id}/process?method=...`.
+- La cancelación administrativa conserva el comportamiento anterior y no
+  modifica pagos automáticamente. La cancelación propia sí cancela un pago
+  `PENDING`; ante un pago `PAID`, exige un reembolso explícito.
+- No se agregó una migración destructiva. Si una base local alcanzó a crear una
+  columna provisional, `ddl-auto=update` la deja inerte al retirar el mapping,
+  permitiendo volver temporalmente a un binario anterior.
+
+### Frontend y verificación
+
+- API, hooks, mutaciones, pruebas, documentación y CSS del portal usan nombres
+  neutrales y conservan sin cambios el rediseño Tailwind/shadcn.
+- Las referencias de constancia se muestran solo si cumplen la allowlist
+  `RCP-*`; cualquier referencia heredada no reconocida se oculta.
+- Backend: 94/94 pruebas. Portal: 27/27 pruebas, lint y build correctos.
+
+## Fase 6 - Correos HTML y notificaciones internas (14 de julio de 2026)
+
+### Plantillas de correo
+
+- Se extendió `EmailSender` con un contrato HTML que conserva el método
+  histórico de texto plano para compatibilidad.
+- `BrevoEmailSender` envía `textContent` y `htmlContent`; los adaptadores que
+  solo implementan el contrato anterior continúan funcionando mediante el
+  método por defecto.
+- `EmailTemplateService` centraliza asunto, texto de respaldo y presentación.
+  Escapa todos los valores dinámicos y carga los archivos desde
+  `src/main/resources/templates/email`.
+- Se agregaron plantillas responsive para activación OTP, eventos de citas,
+  confirmación de pago y mensajes genéricos, con enlaces configurables mediante
+  `PATIENT_PORTAL_URL`.
+- `PatientActivationService` ya no contiene el texto del correo OTP. El
+  scheduler transforma las notificaciones persistidas en HTML al enviarlas;
+  los mensajes breves de `AppointmentService` y `PaymentService` se conservan
+  para el canal `IN_APP` y como respaldo de texto accesible.
+
+### Notificaciones propias del paciente
+
+- Se agregaron `GET /api/notifications/me` y
+  `PATCH /api/notifications/me/{notificationId}/read`, ambos exclusivos de
+  `PATIENT`.
+- El backend obtiene el perfil desde el JWT y valida ownership mediante la
+  relación `Notification -> Appointment -> Patient`. No acepta `email` ni
+  `patientId` desde el portal y responde 404 ante recursos inexistentes o ajenos.
+- `PatientNotificationResponse` omite correo, reintentos y errores técnicos que
+  solo corresponden al panel de staff. Los contratos históricos generales no
+  fueron modificados.
+- El portal incorpora campana responsive, contador de no leídas, navegación,
+  filtros, historial y acciones para marcar una o todas como leídas. React Query
+  refresca los avisos cada minuto y aísla su caché por username.
+
+### Registro de archivos
+
+- Backend: `EmailSender`, `BrevoEmailSender`, `EmailContent`,
+  `EmailTemplateService`, plantillas HTML, scheduler, controller/service/
+  repository de notificaciones, DTO seguro, seguridad y configuración.
+- Portal: contrato API, hook, clave de caché, utilidades, campana/sidebar,
+  `NotificationsPage`, `NotificationCard` y pruebas unitarias de filtros.
+
+### Verificación pendiente
+
+- Por indicación del usuario no se ejecutaron pruebas, lint ni build durante
+  esta fase. Los casos de prueba se actualizaron y quedaron listos para una
+  ejecución posterior.
+
+## Fase 7 - Descarga PDF de constancias (14 de julio de 2026)
+
+### Backend
+
+- Se agregó Apache PDFBox `3.0.8` como dependencia exclusiva del backend.
+- `ReceiptPdfService` genera una constancia A4 en memoria con identidad visual
+  Aviva, referencia `RCP-*`, paciente, cita, profesional, especialidad, método,
+  cobertura y total registrado. No incluye motivo, triaje, diagnóstico ni otra
+  información clínica.
+- `GET /api/receipts/me/{receiptId}/pdf` devuelve `application/pdf` con
+  `Content-Disposition: attachment`, `Cache-Control: no-store` y nombre de
+  archivo controlado.
+- `ReceiptService` valida primero el paciente del JWT y el ownership del recibo.
+  Una constancia ajena se mantiene indistinguible de una inexistente mediante
+  respuesta 404. Los endpoints históricos del staff no cambian.
+
+### Portal
+
+- El diálogo de constancia incorpora `Descargar PDF` junto a la impresión del
+  navegador, con estado de descarga y mensaje de error accesible.
+- Axios solicita el archivo como `blob`; el cliente crea una URL temporal,
+  dispara la descarga con nombre `Constancia-RCP-*.pdf` y revoca la URL después.
+- No se agregó ninguna dependencia al frontend.
+
+### Registro de archivos
+
+- Backend: `pom.xml`, `ReceiptPdfDocument`, `ReceiptPdfService`,
+  `ReceiptService`, `ReceiptController` y pruebas relacionadas.
+- Portal: contrato de `portalApi`, hook de pagos, utilidades, `PaymentsPage`,
+  `ReceiptDialog` y pruebas de nombres de archivo.
+
+### Verificación
+
+- `ReceiptPdfServiceTest` compiló el backend y generó un PDF válido de una sola
+  página; verificó cabecera `%PDF`, referencia, paciente y total extraídos.
+- La muestra se renderizó a 150 DPI y se revisó visualmente en formato opaco: no presenta
+  recortes, superposiciones ni texto ilegible; encabezado, bloques, montos y pie
+  mantienen alineación y contraste.
+- No se ejecutaron la suite completa del backend, los tests generales del
+  portal, lint ni build.

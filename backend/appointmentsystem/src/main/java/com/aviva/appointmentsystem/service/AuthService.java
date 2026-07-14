@@ -119,7 +119,7 @@ public class AuthService {
      * @return PatientResponse con los datos del paciente creado
      */
     public PatientResponse registerPatient(RegisterPatientRequest request) {
-        logger.info("Registro de paciente: username={}, dni={}", request.username(), request.dni());
+        logger.info("Registro de paciente: username={}", request.username());
 
         // ── Validaciones de unicidad (responsabilidad del Service) ──
 
@@ -195,7 +195,7 @@ public class AuthService {
         patient.setUpdatedAt(now);
 
         Patient saved = patientRepository.save(patient);
-        logger.info("Patient creado: id={}, dni={}", saved.getId(), saved.getDni());
+        logger.info("Patient creado: id={}", saved.getId());
 
         // ── 3. Devolver respuesta ──
         return new PatientResponse(

@@ -2,6 +2,7 @@ package com.aviva.appointmentsystem.controller;
 
 import com.aviva.appointmentsystem.dto.ApiResponse;
 import com.aviva.appointmentsystem.dto.ReceiptResponse;
+import com.aviva.appointmentsystem.service.ReceiptPdfDocument;
 import com.aviva.appointmentsystem.service.ReceiptService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -10,12 +11,19 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.util.List;
 
 /**
@@ -28,6 +36,7 @@ import java.util.List;
  * - GET /api/receipts                         → Listar todos
  * - GET /api/receipts/{id}                    → Por ID
  * - GET /api/receipts/number/{receiptNumber}  → Por número de comprobante
+ * - GET /api/receipts/me/{id}/pdf             → Descarga PDF propia
  */
 @RestController
 @RequestMapping("/api/receipts")
@@ -41,6 +50,85 @@ public class ReceiptController {
 
     public ReceiptController(ReceiptService receiptService) {
         this.receiptService = receiptService;
+    }
+
+    // ========================================================
+    // PORTAL DEL PACIENTE (/me)
+    // ========================================================
+
+    @Operation(
+        summary = "Listar mis constancias",
+        description = "Devuelve únicamente las constancias del paciente autenticado"
+    )
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<List<ReceiptResponse>>> getMine(
+            Principal principal) {
+
+        List<ReceiptResponse> response =
+                receiptService.getForCurrentPatient(principal.getName());
+        return ResponseEntity.ok(ApiResponse.success(
+                response, "Mis constancias obtenidas: " + response.size()));
+    }
+
+    @Operation(
+        summary = "Obtener una de mis constancias",
+        description = "Devuelve la constancia solo si pertenece al paciente autenticado"
+    )
+    @GetMapping("/me/{id}")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<ReceiptResponse>> getMineById(
+            Principal principal,
+            @PathVariable Long id) {
+
+        ReceiptResponse response = receiptService.getByIdForCurrentPatient(
+                principal.getName(), id);
+        return ResponseEntity.ok(ApiResponse.success(
+                response, "Constancia obtenida"));
+    }
+
+    @Operation(
+        summary = "Descargar una de mis constancias en PDF",
+        description = "Genera el PDF solo si la constancia pertenece al paciente autenticado"
+    )
+    @GetMapping(value = "/me/{id}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<byte[]> downloadMineAsPdf(
+            Principal principal,
+            @PathVariable Long id) {
+
+        ReceiptPdfDocument document =
+                receiptService.generatePdfForCurrentPatient(
+                        principal.getName(),
+                        id
+                );
+
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename(document.filename(), StandardCharsets.UTF_8)
+                .build();
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .contentLength(document.content().length)
+                .cacheControl(CacheControl.noStore())
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(document.content());
+    }
+
+    @Operation(
+        summary = "Obtener mi constancia por pago",
+        description = "Busca la constancia de un pago propio sin aceptar patientId"
+    )
+    @GetMapping("/me/payment/{paymentId}")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<ReceiptResponse>> getMineByPayment(
+            Principal principal,
+            @PathVariable Long paymentId) {
+
+        ReceiptResponse response = receiptService.getByPaymentForCurrentPatient(
+                principal.getName(), paymentId);
+        return ResponseEntity.ok(ApiResponse.success(
+                response, "Constancia obtenida"));
     }
 
     /**

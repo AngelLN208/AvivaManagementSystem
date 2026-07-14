@@ -21,10 +21,14 @@ public record RegisterPatientRequest(
 
     @NotBlank(message = "El nombre de usuario no puede estar vacío")
     @Size(min = 3, max = 50, message = "El nombre de usuario debe tener entre 3 y 50 caracteres")
+    @Pattern(
+        regexp = "^[A-Za-z0-9._-]+$",
+        message = "El nombre de usuario solo puede contener letras, números, punto, guion y guion bajo"
+    )
     String username,
 
     @NotBlank(message = "La contraseña no puede estar vacía")
-    @Size(min = 4, max = 100, message = "La contraseña debe tener entre 4 y 100 caracteres")
+    @Size(min = 8, max = 100, message = "La contraseña debe tener entre 8 y 100 caracteres")
     String password,
 
     // ── Campos del paciente (Patient) ──

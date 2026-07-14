@@ -3,6 +3,7 @@ package com.aviva.appointmentsystem.controller;
 import com.aviva.appointmentsystem.dto.ApiResponse;
 import com.aviva.appointmentsystem.dto.PatientInsuranceRequest;
 import com.aviva.appointmentsystem.dto.PatientInsuranceResponse;
+import com.aviva.appointmentsystem.dto.PortalPatientInsuranceRequest;
 import com.aviva.appointmentsystem.service.PatientInsuranceService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Optional;
+import java.security.Principal;
 
 /**
  * Controlador de seguros de pacientes
@@ -37,6 +40,43 @@ public class PatientInsuranceController {
 
     @Autowired
     private PatientInsuranceService patientInsuranceService;
+
+    /**
+     * Portal del paciente: registra su propia póliza sin recibir patientId.
+     */
+    @PostMapping("/me")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<PatientInsuranceResponse>> linkMyInsurance(
+            Principal principal,
+            @Valid @RequestBody PortalPatientInsuranceRequest request) {
+        PatientInsuranceResponse response = patientInsuranceService
+                .linkInsuranceForCurrentPatient(principal.getName(), request);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(response, "Seguro vinculado exitosamente"));
+    }
+
+    /** Portal del paciente: lista solo sus pólizas activas. */
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<List<PatientInsuranceResponse>>> getMyInsurances(
+            Principal principal) {
+        List<PatientInsuranceResponse> response = patientInsuranceService
+                .getForCurrentPatient(principal.getName());
+        return ResponseEntity.ok(ApiResponse.success(response, "Seguros obtenidos"));
+    }
+
+    /** Portal del paciente: elimina únicamente una vinculación propia. */
+    @DeleteMapping("/me/{patientInsuranceId}")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<String>> unlinkMyInsurance(
+            Principal principal,
+            @PathVariable Long patientInsuranceId) {
+        patientInsuranceService.unlinkInsuranceForCurrentPatient(
+                principal.getName(), patientInsuranceId
+        );
+        return ResponseEntity.ok(ApiResponse.success("Seguro desvinculado exitosamente"));
+    }
 
     /**
      * Vincula un seguro a un paciente

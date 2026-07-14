@@ -5,7 +5,7 @@ import { useNotificaciones } from '../../hooks/useNotificaciones';
 import { useAuth } from '../../hooks/useAuth';
 import { getIniciales } from '../../utils/helpers';
 
-export default function Navbar({ onToggleSidebar }) {
+export default function Navbar({ onToggleSidebar, notifPath = '/notificaciones' }) {
   const { tema, toggleTema } = useTheme();
   const { alertas, isLoading } = useNotificaciones();
   const { logout } = useAuth();
@@ -104,7 +104,7 @@ export default function Navbar({ onToggleSidebar }) {
                   )}
                 </div>
                 <div className="notif-panel-footer">
-                  <Link to="/notificaciones" className="text-primary text-decoration-none small" onClick={() => setPanelAbierto(false)}>Ver todas</Link>
+                  <Link to={notifPath} className="text-primary text-decoration-none small" onClick={() => setPanelAbierto(false)}>Ver todas</Link>
                 </div>
               </div>
             )}

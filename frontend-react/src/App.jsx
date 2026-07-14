@@ -15,6 +15,7 @@ import EspecialidadesAdmin from './pages/admin/EspecialidadesAdmin';
 import PacientesAdmin from './pages/admin/PacientesAdmin';
 import HorariosAdmin from './pages/admin/HorariosAdmin';
 import PagosAdmin from './pages/admin/PagosAdmin';
+import NotificacionesAdmin from './pages/admin/NotificacionesAdmin';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
           <Route path="/admin/pacientes" element={<PacientesAdmin />} />
           <Route path="/admin/horarios" element={<HorariosAdmin />} />
           <Route path="/admin/pagos" element={<PagosAdmin />} />
+          <Route path="/admin/notificaciones" element={<NotificacionesAdmin />} />
         </Route>
       </Route>
     </Routes>

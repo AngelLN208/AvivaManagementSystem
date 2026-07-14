@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { getPacientes } from '../../api/pacientesApi';
 import { getDoctores } from '../../api/doctoresApi';
 import { getEspecialidades } from '../../api/especialidadesApi';
 import { getPagos } from '../../api/pagosApi';
+import StatCard from '../../components/ui/StatCard';
+import CitasSemana from '../../components/ui/CitasSemana';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -13,6 +16,8 @@ export default function AdminDashboard() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const username = localStorage.getItem('username') || 'Administrador';
 
   useEffect(() => {
     async function loadStats() {
@@ -46,81 +51,83 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div>
-      <div className="mb-4">
-        <h3 className="fw-semibold">Bienvenido, Administrador 👋</h3>
-        <small className="text-muted">Panel de Administración</small>
+    <div className="panel-page">
+      <div className="panel-titulo d-flex align-items-center gap-2 mb-1 mt-2">
+        <i className="fa-solid fa-border-all texto-primario-personalizado fa-lg"></i>
+        <h4 className="fw-bold mb-0">Bienvenido, {username} 👋</h4>
+      </div>
+      <p className="text-muted mb-4">Panel de administración</p>
+
+      {/* TARJETAS ESTADÍSTICAS */}
+      <div className="grid-estadisticas">
+        <StatCard
+          icon="fa-solid fa-users"
+          title="Pacientes"
+          value={stats.pacientes}
+          subtitle="Total en el sistema"
+          accent="primario"
+          isLoading={isLoading}
+        />
+        <StatCard
+          icon="fa-solid fa-user-doctor"
+          title="Doctores"
+          value={stats.doctores}
+          subtitle="Total activos"
+          accent="info"
+          isLoading={isLoading}
+        />
+        <StatCard
+          icon="fa-solid fa-hospital"
+          title="Especialidades"
+          value={stats.especialidades}
+          subtitle="Disponibles"
+          accent="advertencia"
+          isLoading={isLoading}
+        />
+        <StatCard
+          icon="fa-solid fa-money-bill"
+          title="Pagos"
+          value={stats.pagos}
+          subtitle="Registrados"
+          accent="exito"
+          isLoading={isLoading}
+        />
       </div>
 
-      {isLoading ? (
-        <div className="text-center py-5">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Cargando...</span>
+      <div className="row g-4 mt-1">
+        {/* ACCESOS RÁPIDOS */}
+        <div className="col-lg-7">
+          <h6 className="text-muted fw-semibold mb-3">Accesos rápidos</h6>
+          <div className="grid-acceso-rapido">
+            <Link to="/admin/pacientes" className="acceso-rapido-card">
+              <div className="icono-acceso"><i className="fa-solid fa-bed-pulse"></i></div>
+              <span className="fw-semibold" style={{ fontSize: '0.85rem' }}>Pacientes</span>
+            </Link>
+            <Link to="/admin/doctores" className="acceso-rapido-card">
+              <div className="icono-acceso"><i className="fa-solid fa-user-doctor"></i></div>
+              <span className="fw-semibold" style={{ fontSize: '0.85rem' }}>Doctores</span>
+            </Link>
+            <Link to="/admin/especialidades" className="acceso-rapido-card">
+              <div className="icono-acceso"><i className="fa-solid fa-hospital"></i></div>
+              <span className="fw-semibold" style={{ fontSize: '0.85rem' }}>Especialidades</span>
+            </Link>
+            <Link to="/admin/horarios" className="acceso-rapido-card">
+              <div className="icono-acceso"><i className="fa-solid fa-calendar"></i></div>
+              <span className="fw-semibold" style={{ fontSize: '0.85rem' }}>Horarios</span>
+            </Link>
+            <Link to="/admin/pagos" className="acceso-rapido-card">
+              <div className="icono-acceso"><i className="fa-solid fa-money-bill"></i></div>
+              <span className="fw-semibold" style={{ fontSize: '0.85rem' }}>Pagos</span>
+            </Link>
           </div>
         </div>
-      ) : (
-        <div className="row g-4">
-          <div className="col-md-6 col-lg-3">
-            <div className="dashboard-card">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="text-muted mb-2">Pacientes</p>
-                  <h3 className="fw-bold mb-0">{stats.pacientes}</h3>
-                  <small className="text-success">Total en el sistema</small>
-                </div>
-                <div style={{ fontSize: '2.5rem', color: '#0d4d7d' }}>
-                  <i className="fa-solid fa-users"></i>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          <div className="col-md-6 col-lg-3">
-            <div className="dashboard-card">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="text-muted mb-2">Doctores</p>
-                  <h3 className="fw-bold mb-0">{stats.doctores}</h3>
-                  <small className="text-success">Total activos</small>
-                </div>
-                <div style={{ fontSize: '2.5rem', color: '#7ed6c2' }}>
-                  <i className="fa-solid fa-user-doctor"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="col-md-6 col-lg-3">
-            <div className="dashboard-card">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="text-muted mb-2">Especialidades</p>
-                  <h3 className="fw-bold mb-0">{stats.especialidades}</h3>
-                  <small className="text-success">Disponibles</small>
-                </div>
-                <div style={{ fontSize: '2.5rem', color: '#2f8cc7' }}>
-                  <i className="fa-solid fa-hospital"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="col-md-6 col-lg-3">
-            <div className="dashboard-card">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="text-muted mb-2">Pagos</p>
-                  <h3 className="fw-bold mb-0">{stats.pagos}</h3>
-                  <small className="text-success">Registrados</small>
-                </div>
-                <div style={{ fontSize: '2.5rem', color: '#ffc107' }}>
-                  <i className="fa-solid fa-money-bill"></i>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* GRÁFICA */}
+        <div className="col-lg-5">
+          <h6 className="text-muted fw-semibold mb-3">Actividad</h6>
+          <CitasSemana />
         </div>
-      )}
+      </div>
     </div>
   );
 }

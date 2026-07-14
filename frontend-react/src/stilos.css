@@ -28,14 +28,14 @@
 }
 
 *,*::before,*::after{box-sizing:border-box;}
-html,body{margin:0;padding:0;height:100%;}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;}
 
 body {
   background-color: var(--fondo-claro);
   color: var(--texto-oscuro);
   font-family: 'DM Sans', sans-serif;
   transition: background-color 0.3s, color 0.3s;
-  overflow-x: hidden;
+  overflow: hidden;
   line-height: 1.6;
 }
 
@@ -52,7 +52,7 @@ body {
 .texto-error{color:var(--color-error);}
 
 /* LAYOUT */
-#wrapper{display:flex;min-height:100vh;width:100%;}
+#wrapper{display:flex;height:100vh;width:100%;}
 
 /* SIDEBAR */
 #sidebar-wrapper {
@@ -254,7 +254,25 @@ body {
   border-radius:1rem !important;
   background-color:#fff;
 }
-
+.icono-estadistica {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+ 
+.fondo-primario-sutil {
+  background-color: var(--color-primario-hover);
+}
+ 
+/* Agregar esto en la sección ====== MODO OSCURO ====== */
+body[data-tema="oscuro"] .fondo-primario-sutil {
+  background-color: rgba(120, 227, 211, 0.15);
+}
 .tarjeta-estadistica:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.09) !important;}
 
 /* PANEL TÍTULO */

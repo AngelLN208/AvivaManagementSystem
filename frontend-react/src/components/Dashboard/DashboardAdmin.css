@@ -1,0 +1,71 @@
+.dashboard-card {
+    background: var(--aviva-surface);
+    border: 1px solid var(--aviva-border);
+    border-radius: 24px;
+    box-shadow: 0 10px 30px rgba(15,23,42,0.05);
+    padding: 26px;
+    transition: .2s;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-3px);
+}
+
+.dashboard-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 26px;
+}
+
+.bg-card-primary {
+    background: linear-gradient(
+        135deg,
+        var(--aviva-primary),
+        var(--aviva-secondary)
+    );
+}
+
+.bg-card-success {
+    background: linear-gradient(
+        135deg,
+        #7ed6c2,
+        #57c7ac
+    );
+}
+
+.bg-card-warning {
+    background: linear-gradient(
+        135deg,
+        #9adbcf,
+        #7ed6c2
+    );
+}
+
+.custom-alert {
+    border-radius: 20px;
+}
+
+.appointment-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.appointment-hour {
+    width: 60px;
+    height: 60px;
+    background: #eef4ff;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--aviva-primary);
+    font-weight: 600;
+}

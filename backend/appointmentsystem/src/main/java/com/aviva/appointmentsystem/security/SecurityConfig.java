@@ -90,6 +90,7 @@ public class SecurityConfig {
                 "http://localhost:5050",
                 "http://127.0.0.1:5500",
                 "http://localhost:5173",
+                "http://localhost:5174",
                 "https://zany-space-broccoli-v6jgg4jvxppghrrq-5173.app.github.dev"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));

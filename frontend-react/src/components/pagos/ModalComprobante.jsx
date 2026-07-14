@@ -1,15 +1,7 @@
 import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getRecibos } from '../../api/pagosApi';
 import { formatFecha, formatFechaHora, METODO_PAGO_MAP } from '../../utils/formatters';
 
 export default function ModalComprobante({ pago, onClosed }) {
-  const { data: recibos = [] } = useQuery({
-    queryKey: ['recibos'],
-    queryFn: getRecibos,
-    enabled: !!pago,
-  });
-
   useEffect(() => {
     if (pago) {
       window.bootstrap?.Modal.getOrCreateInstance(document.getElementById('modalComprobante')).show();
@@ -23,7 +15,6 @@ export default function ModalComprobante({ pago, onClosed }) {
     return () => el?.removeEventListener('hidden.bs.modal', handleHidden);
   }, [onClosed]);
 
-  const recibo = pago ? recibos.find((r) => r.payment?.id === pago.id) : null;
   const paciente = pago ? `${pago.appointment?.patient?.firstName || ''} ${pago.appointment?.patient?.lastName || ''}`.trim() : '—';
   const medico = pago?.appointment?.doctor ? `${pago.appointment.doctor.firstName} ${pago.appointment.doctor.lastName}` : '—';
 
@@ -40,7 +31,7 @@ export default function ModalComprobante({ pago, onClosed }) {
               <div className="d-flex justify-content-between align-items-start mb-3">
                 <div>
                   <h6 className="fw-bold mb-0">Clínica Aviva</h6>
-                  <small className="text-muted">N° {recibo?.receiptNumber || '—'}</small>
+                  <small className="text-muted">N° {pago?.id || '—'}</small>
                 </div>
                 <span className="badge fondo-exito-sutil texto-exito rounded-pill px-3">Pagado</span>
               </div>

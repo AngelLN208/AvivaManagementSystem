@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
+import AdminLayout from './components/layout/AdminLayout';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -8,6 +9,12 @@ import Pacientes from './pages/Pacientes';
 import HorarioMedicos from './pages/HorarioMedicos';
 import Pagos from './pages/Pagos';
 import Notificaciones from './pages/Notificaciones';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import DoctoresAdmin from './pages/admin/DoctoresAdmin';
+import EspecialidadesAdmin from './pages/admin/EspecialidadesAdmin';
+import PacientesAdmin from './pages/admin/PacientesAdmin';
+import HorariosAdmin from './pages/admin/HorariosAdmin';
+import PagosAdmin from './pages/admin/PagosAdmin';
 
 function App() {
   return (
@@ -22,6 +29,17 @@ function App() {
           <Route path="/horario-medicos" element={<HorarioMedicos />} />
           <Route path="/pagos" element={<Pagos />} />
           <Route path="/notificaciones" element={<Notificaciones />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AdminLayout />}>
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/doctores" element={<DoctoresAdmin />} />
+          <Route path="/admin/especialidades" element={<EspecialidadesAdmin />} />
+          <Route path="/admin/pacientes" element={<PacientesAdmin />} />
+          <Route path="/admin/horarios" element={<HorariosAdmin />} />
+          <Route path="/admin/pagos" element={<PagosAdmin />} />
         </Route>
       </Route>
     </Routes>

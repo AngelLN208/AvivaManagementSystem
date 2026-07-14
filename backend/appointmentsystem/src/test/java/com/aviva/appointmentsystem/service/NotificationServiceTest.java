@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -101,6 +102,18 @@ class NotificationServiceTest {
         when(notificationRepository.findById(11L)).thenReturn(Optional.of(notification));
 
         assertThrows(ValidationException.class, () -> notificationService.markAsRead(11L));
+    }
+
+    @Test
+    void getAllNotificationsUsesRepositoryOrderForReceptionDashboard() {
+        Notification notification = completeNotification(Notification.NotificationChannel.EMAIL);
+        when(notificationRepository.findAllByOrderByCreatedAtDesc())
+                .thenReturn(List.of(notification));
+
+        List<NotificationResponse> response = notificationService.getAllNotifications();
+
+        assertEquals(1, response.size());
+        assertEquals(notification.getId(), response.getFirst().id());
     }
 
     private Notification completeNotification(Notification.NotificationChannel channel) {

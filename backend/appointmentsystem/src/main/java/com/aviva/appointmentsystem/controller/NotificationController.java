@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,6 +35,20 @@ public class NotificationController {
 
     public NotificationController(NotificationService notificationService) {
         this.notificationService = notificationService;
+    }
+
+    /**
+     * Lista el historial completo que utiliza el panel de recepcion.
+     */
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
+    @Operation(summary = "Listar el historial general de notificaciones")
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getAllNotifications() {
+        List<NotificationResponse> response = notificationService.getAllNotifications();
+
+        return ResponseEntity.ok(
+                ApiResponse.success(response, "Notificaciones obtenidas: " + response.size())
+        );
     }
 
     /**

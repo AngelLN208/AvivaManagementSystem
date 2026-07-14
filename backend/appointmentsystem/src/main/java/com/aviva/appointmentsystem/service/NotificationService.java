@@ -201,6 +201,18 @@ public class NotificationService {
     }
 
     /**
+     * Lista el historial general de notificaciones para el panel de recepcion.
+     * Incluye EMAIL e IN_APP para facilitar el seguimiento de envios y fallos.
+     */
+    @Transactional(readOnly = true)
+    public List<NotificationResponse> getAllNotifications() {
+        return notificationRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    /**
      * Obtiene solo las notificaciones internas del paciente, ordenadas desde
      * la mas reciente. Este listado es el que consumira el portal web.
      */

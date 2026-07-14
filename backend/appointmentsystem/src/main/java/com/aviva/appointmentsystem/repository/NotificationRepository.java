@@ -12,6 +12,7 @@ import java.util.List;
  */
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
+    List<Notification> findAllByOrderByCreatedAtDesc();
     List<Notification> findByStatus(Notification.NotificationStatus status);
     List<Notification> findByScheduledTimeLessThanEqualAndStatusOrderByScheduledTimeAsc(
             LocalDateTime dateTime,

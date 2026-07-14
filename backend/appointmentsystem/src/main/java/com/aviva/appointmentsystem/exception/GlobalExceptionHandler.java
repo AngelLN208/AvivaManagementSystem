@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -81,6 +82,26 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
+                .body(response);
+    }
+
+    /**
+     * Conserva una respuesta JSON 403 cuando @PreAuthorize rechaza un rol.
+     * Sin este caso explícito, el catch-all podría convertir la denegación en 500.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
+        logger.warn("Acceso denegado: {}", ex.getMessage());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("timestamp", LocalDateTime.now().toString());
+        response.put("code", "ACCESS_DENIED");
+        response.put("message", "No tiene permisos para realizar esta operación");
+        response.put("status", HttpStatus.FORBIDDEN.value());
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
                 .body(response);
     }
 

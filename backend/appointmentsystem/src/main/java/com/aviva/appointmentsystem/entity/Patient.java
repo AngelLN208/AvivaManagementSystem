@@ -10,6 +10,9 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
@@ -23,6 +26,17 @@ public class Patient {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    /**
+     * Cuenta que permite al paciente ingresar al portal.
+     *
+     * Es opcional porque los pacientes registrados internamente por el staff
+     * pueden no tener todavía credenciales de acceso. La restricción unique
+     * garantiza que una cuenta no pueda representar a más de un paciente.
+     */
+    @OneToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "user_id", unique = true)
+    private User user;
 
     @Column(nullable = false, unique = true)
     private String dni;
@@ -65,6 +79,9 @@ public class Patient {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 
     public String getDni() { return dni; }
     public void setDni(String dni) { this.dni = dni; }

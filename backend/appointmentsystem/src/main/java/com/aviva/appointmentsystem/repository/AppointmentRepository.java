@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Repositorio para la entidad Appointment.
@@ -45,6 +46,12 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     /** Citas de un paciente por ID (sin cargar la entidad Patient) */
     List<Appointment> findByPatientId(Long patientId);
+
+    /**
+     * Busca una cita únicamente cuando pertenece al paciente indicado.
+     * Se usa en el portal para validar ownership sin exponer citas ajenas.
+     */
+    Optional<Appointment> findByIdAndPatientId(Long id, Long patientId);
 
     /**
      * RN-12: Detecta conflicto exacto de horario para un doctor.

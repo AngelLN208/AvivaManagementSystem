@@ -27,6 +27,9 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
     /** Busca paciente por email exacto */
     Optional<Patient> findByEmail(String email);
 
+    /** Resuelve el perfil asociado a la identidad autenticada del portal. */
+    Optional<Patient> findByUserUsername(String username);
+
     /** Lista pacientes por estado (ACTIVE, INACTIVE, etc.) — sin filtrar en Java */
     List<Patient> findByStatus(UserStatus status);
 

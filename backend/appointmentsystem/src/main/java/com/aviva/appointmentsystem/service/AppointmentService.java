@@ -5,6 +5,7 @@ import com.aviva.appointmentsystem.dto.AppointmentResponse;
 import com.aviva.appointmentsystem.dto.AvailableSlotResponse;
 import com.aviva.appointmentsystem.dto.DoctorResponse;
 import com.aviva.appointmentsystem.dto.InsuranceCoverageResult;
+import com.aviva.appointmentsystem.dto.PatientAppointmentRequest;
 import com.aviva.appointmentsystem.dto.PatientResponse;
 import com.aviva.appointmentsystem.dto.SpecialtyResponse;
 import com.aviva.appointmentsystem.entity.Appointment;
@@ -18,8 +19,10 @@ import com.aviva.appointmentsystem.entity.PatientInsurance;
 import com.aviva.appointmentsystem.entity.Payment;
 import com.aviva.appointmentsystem.entity.PaymentMethod;
 import com.aviva.appointmentsystem.entity.PaymentStatus;
+import com.aviva.appointmentsystem.entity.UserStatus;
 import com.aviva.appointmentsystem.exception.BusinessRuleException;
 import com.aviva.appointmentsystem.exception.ResourceNotFoundException;
+import com.aviva.appointmentsystem.exception.UserInactiveException;
 import com.aviva.appointmentsystem.exception.ValidationException;
 import com.aviva.appointmentsystem.repository.AppointmentRepository;
 import com.aviva.appointmentsystem.repository.AuditLogRepository;
@@ -114,6 +117,10 @@ public class AppointmentService {
      * @return cita creada con datos de paciente y doctor anidados
      */
     public AppointmentResponse create(AppointmentRequest request) {
+        return create(request, "SYSTEM");
+    }
+
+    private AppointmentResponse create(AppointmentRequest request, String modifiedBy) {
         logger.info("Creando cita: paciente={}, doctor={}, hora={}",
             request.patientId(), request.doctorId(), request.appointmentDateTime());
 
@@ -151,7 +158,7 @@ public class AppointmentService {
         createPaymentForAppointment(saved);
 
         // 6. Auditoría y notificaciones (no bloquean si fallan)
-        registerAudit(saved, "CREATED", "Cita creada exitosamente", "SYSTEM");
+        registerAudit(saved, "CREATED", "Cita creada exitosamente", modifiedBy);
         createAppointmentNotifications(saved, "APPOINTMENT_CREATED");
 
         return mapToResponse(saved);
@@ -169,10 +176,18 @@ public class AppointmentService {
      * @return cita actualizada
      */
     public AppointmentResponse reschedule(Long id, String newDateTimeStr) {
-        logger.info("Reprogramando cita ID={} a {}", id, newDateTimeStr);
-
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cita", id));
+        return reschedule(appointment, newDateTimeStr, "SYSTEM");
+    }
+
+    private AppointmentResponse reschedule(
+            Appointment appointment,
+            String newDateTimeStr,
+            String modifiedBy) {
+
+        Long id = appointment.getId();
+        logger.info("Reprogramando cita ID={} a {}", id, newDateTimeStr);
 
         // RN-14: Solo se pueden reprogramar citas que no estén canceladas o completadas
         if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
@@ -204,7 +219,7 @@ public class AppointmentService {
         Appointment updated = appointmentRepository.save(appointment);
         logger.info("Cita reprogramada: ID={}, nuevoDateTime={}", id, newDateTime);
 
-        registerAudit(updated, "RESCHEDULED", "Reprogramada a: " + newDateTimeStr, "SYSTEM");
+        registerAudit(updated, "RESCHEDULED", "Reprogramada a: " + newDateTimeStr, modifiedBy);
         createAppointmentNotifications(updated, "APPOINTMENT_RESCHEDULED");
 
         return mapToResponse(updated);
@@ -220,10 +235,14 @@ public class AppointmentService {
      * @return cita actualizada
      */
     public AppointmentResponse cancel(Long id) {
-        logger.info("Cancelando cita ID={}", id);
-
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cita", id));
+        return cancel(appointment, "SYSTEM");
+    }
+
+    private AppointmentResponse cancel(Appointment appointment, String modifiedBy) {
+        Long id = appointment.getId();
+        logger.info("Cancelando cita ID={}", id);
 
         if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
             throw new BusinessRuleException("RN-15_ALREADY_CANCELLED",
@@ -240,10 +259,71 @@ public class AppointmentService {
         Appointment updated = appointmentRepository.save(appointment);
         logger.info("Cita cancelada: ID={}", id);
 
-        registerAudit(updated, "CANCELLED", "Cita cancelada", "SYSTEM");
+        registerAudit(updated, "CANCELLED", "Cita cancelada", modifiedBy);
         createAppointmentNotifications(updated, "APPOINTMENT_CANCELLED");
 
         return mapToResponse(updated);
+    }
+
+    // ========================================================
+    // PORTAL DEL PACIENTE
+    // ========================================================
+
+    /**
+     * Crea una cita para el paciente asociado al usuario autenticado.
+     * El patientId se obtiene en el servidor y nunca se acepta del portal.
+     */
+    public AppointmentResponse createForCurrentPatient(
+            String username,
+            PatientAppointmentRequest request) {
+
+        Patient patient = requirePatientProfile(username);
+
+        AppointmentRequest appointmentRequest = new AppointmentRequest(
+                patient.getId(),
+                request.doctorId(),
+                request.appointmentDateTime(),
+                request.reason()
+        );
+
+        return create(appointmentRequest, username);
+    }
+
+    /** Lista únicamente las citas del paciente autenticado. */
+    @Transactional(readOnly = true)
+    public List<AppointmentResponse> getForCurrentPatient(String username) {
+        Patient patient = requirePatientProfile(username);
+
+        return appointmentRepository.findByPatientId(patient.getId())
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    /** Obtiene una cita solo si pertenece al paciente autenticado. */
+    @Transactional(readOnly = true)
+    public AppointmentResponse getByIdForCurrentPatient(String username, Long appointmentId) {
+        Patient patient = requirePatientProfile(username);
+        Appointment appointment = requireOwnedAppointment(appointmentId, patient.getId());
+        return mapToResponse(appointment);
+    }
+
+    /** Reprograma una cita después de verificar su pertenencia. */
+    public AppointmentResponse rescheduleForCurrentPatient(
+            String username,
+            Long appointmentId,
+            String newDateTime) {
+
+        Patient patient = requirePatientProfile(username);
+        Appointment appointment = requireOwnedAppointment(appointmentId, patient.getId());
+        return reschedule(appointment, newDateTime, username);
+    }
+
+    /** Cancela una cita después de verificar su pertenencia. */
+    public AppointmentResponse cancelForCurrentPatient(String username, Long appointmentId) {
+        Patient patient = requirePatientProfile(username);
+        Appointment appointment = requireOwnedAppointment(appointmentId, patient.getId());
+        return cancel(appointment, username);
     }
 
     // ========================================================
@@ -391,6 +471,35 @@ public class AppointmentService {
 
         logger.info("Slots disponibles para doctor={}, fecha={}: {}", doctorId, date, slotsDisponibles.size());
         return slotsDisponibles;
+    }
+
+    /**
+     * Resuelve la identidad del JWT a un perfil de paciente.
+     * Los pacientes internos sin cuenta continúan siendo válidos para el staff,
+     * pero no pueden usar endpoints /me hasta que tengan una cuenta vinculada.
+     */
+    private Patient requirePatientProfile(String username) {
+        Patient patient = patientRepository.findByUserUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No existe un perfil de paciente asociado al usuario autenticado"
+                ));
+
+        if (patient.getStatus() != UserStatus.ACTIVE
+                || patient.getUser() == null
+                || patient.getUser().getStatus() != UserStatus.ACTIVE) {
+            throw new UserInactiveException(username);
+        }
+
+        return patient;
+    }
+
+    /**
+     * Devuelve 404 tanto para una cita inexistente como para una cita ajena.
+     * Así el portal no revela la existencia de recursos de otros pacientes.
+     */
+    private Appointment requireOwnedAppointment(Long appointmentId, Long patientId) {
+        return appointmentRepository.findByIdAndPatientId(appointmentId, patientId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cita", appointmentId));
     }
 
     // ========================================================

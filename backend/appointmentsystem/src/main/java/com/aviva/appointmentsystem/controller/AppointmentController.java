@@ -4,6 +4,7 @@ import com.aviva.appointmentsystem.dto.ApiResponse;
 import com.aviva.appointmentsystem.dto.AppointmentRequest;
 import com.aviva.appointmentsystem.dto.AppointmentResponse;
 import com.aviva.appointmentsystem.dto.AvailableSlotResponse;
+import com.aviva.appointmentsystem.dto.PatientAppointmentRequest;
 import com.aviva.appointmentsystem.entity.AppointmentStatus;
 import com.aviva.appointmentsystem.service.AppointmentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -63,6 +66,113 @@ public class AppointmentController {
     }
 
     // ========================================================
+    // PORTAL DEL PACIENTE (/me)
+    // ========================================================
+
+    /**
+     * Los endpoints /me nunca reciben patientId. El servicio resuelve el
+     * perfil usando el username autenticado y valida la propiedad de la cita.
+     */
+    @Operation(
+        summary = "Listar mis citas",
+        description = "Devuelve únicamente las citas del paciente autenticado"
+    )
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getMine(Principal principal) {
+        logger.info("GET /api/appointments/me - usuario={}", principal.getName());
+
+        List<AppointmentResponse> response =
+                appointmentService.getForCurrentPatient(principal.getName());
+
+        return ResponseEntity.ok(
+                ApiResponse.success(response, "Mis citas obtenidas: " + response.size())
+        );
+    }
+
+    @Operation(
+        summary = "Obtener una de mis citas",
+        description = "Devuelve la cita solo cuando pertenece al paciente autenticado"
+    )
+    @GetMapping("/me/{id}")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> getMineById(
+            Principal principal,
+            @PathVariable Long id) {
+
+        logger.info("GET /api/appointments/me/{} - usuario={}", id, principal.getName());
+
+        AppointmentResponse response =
+                appointmentService.getByIdForCurrentPatient(principal.getName(), id);
+
+        return ResponseEntity.ok(ApiResponse.success(response, "Cita obtenida"));
+    }
+
+    @Operation(
+        summary = "Crear mi cita",
+        description = "Crea una cita para el paciente autenticado; no acepta patientId"
+    )
+    @PostMapping("/me")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> createMine(
+            Principal principal,
+            @Valid @RequestBody PatientAppointmentRequest request) {
+
+        logger.info("POST /api/appointments/me - usuario={}, doctor={}, hora={}",
+                principal.getName(), request.doctorId(), request.appointmentDateTime());
+
+        AppointmentResponse response =
+                appointmentService.createForCurrentPatient(principal.getName(), request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success(response, "Cita creada exitosamente"));
+    }
+
+    @Operation(
+        summary = "Reprogramar mi cita",
+        description = "Reprograma la cita solo cuando pertenece al paciente autenticado"
+    )
+    @PutMapping("/me/{id}/reschedule")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> rescheduleMine(
+            Principal principal,
+            @PathVariable Long id,
+            @RequestParam String newDateTime) {
+
+        logger.info("PUT /api/appointments/me/{}/reschedule - usuario={}",
+                id, principal.getName());
+
+        AppointmentResponse response = appointmentService.rescheduleForCurrentPatient(
+                principal.getName(), id, newDateTime);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(response, "Cita reprogramada exitosamente")
+        );
+    }
+
+    @Operation(
+        summary = "Cancelar mi cita",
+        description = "Cancela la cita solo cuando pertenece al paciente autenticado"
+    )
+    @PutMapping("/me/{id}/cancel")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> cancelMine(
+            Principal principal,
+            @PathVariable Long id) {
+
+        logger.info("PUT /api/appointments/me/{}/cancel - usuario={}",
+                id, principal.getName());
+
+        AppointmentResponse response =
+                appointmentService.cancelForCurrentPatient(principal.getName(), id);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(response, "Cita cancelada exitosamente")
+        );
+    }
+
+    // ========================================================
     // CONSULTAS (GET)
     // ========================================================
 
@@ -80,6 +190,7 @@ public class AppointmentController {
         )
     })
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'DOCTOR')")
     public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getAll() {
         logger.info("GET /api/appointments - Listar citas");
 
@@ -107,6 +218,7 @@ public class AppointmentController {
         )
     })
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'DOCTOR')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> getById(
             @Parameter(description = "ID de la cita", required = true, example = "1")
             @PathVariable Long id) {
@@ -137,6 +249,7 @@ public class AppointmentController {
         )
     })
     @GetMapping("/patient/{patientId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'DOCTOR')")
     public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getByPatient(
             @Parameter(description = "ID del paciente", required = true, example = "1")
             @PathVariable Long patientId) {
@@ -167,6 +280,7 @@ public class AppointmentController {
         )
     })
     @GetMapping("/doctor/{doctorId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'DOCTOR')")
     public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getByDoctor(
             @Parameter(description = "ID del doctor", required = true, example = "1")
             @PathVariable Long doctorId) {
@@ -198,6 +312,7 @@ public class AppointmentController {
         )
     })
     @GetMapping("/status/{status}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'DOCTOR')")
     public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getByStatus(
             @Parameter(
                 description = "Estado de la cita",
@@ -300,6 +415,7 @@ public class AppointmentController {
         )
     })
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> create(
             @Valid @RequestBody AppointmentRequest request) {
 
@@ -337,6 +453,7 @@ public class AppointmentController {
         )
     })
     @PutMapping("/{id}/reschedule")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> reschedule(
             @Parameter(description = "ID de la cita", required = true, example = "1")
             @PathVariable Long id,
@@ -376,6 +493,7 @@ public class AppointmentController {
         )
     })
     @PutMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> cancel(
             @Parameter(description = "ID de la cita", required = true, example = "1")
             @PathVariable Long id) {

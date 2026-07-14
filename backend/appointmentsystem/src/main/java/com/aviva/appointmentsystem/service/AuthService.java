@@ -177,6 +177,8 @@ public class AuthService {
 
         // ── 2. Crear el Patient (datos clínicos/personales) ──
         Patient patient = new Patient();
+        // Vincula de forma explícita la identidad del portal con su perfil.
+        patient.setUser(user);
         patient.setDni(request.dni());
         patient.setFirstName(request.firstName());
         patient.setLastName(request.lastName());

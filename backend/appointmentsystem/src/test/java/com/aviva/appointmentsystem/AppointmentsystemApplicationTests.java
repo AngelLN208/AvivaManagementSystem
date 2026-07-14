@@ -2,11 +2,10 @@ package com.aviva.appointmentsystem;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 
-@SpringBootTest(properties = {
-	"app.notifications.scheduler-enabled=false",
-	"brevo.api-key=test-key"
-})
+@SpringBootTest
+@AutoConfigureMockMvc
 class AppointmentsystemApplicationTests {
 
 	@Test

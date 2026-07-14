@@ -26,7 +26,9 @@ cd appointmentsystem
 
 La API estará disponible en `http://localhost:8080`.
 
-Al arrancar, el `DataInitializer` crea automáticamente los usuarios de prueba:
+Los datos de demostración están deshabilitados por defecto. Para crearlos en
+desarrollo, configura `APP_SEED_ENABLED=true` antes de arrancar. Nunca habilites
+esta opción en producción. Cuando está habilitada, `DataInitializer` crea:
 
 | username | password | rol |
 |----------|----------|-----|
@@ -34,6 +36,10 @@ Al arrancar, el `DataInitializer` crea automáticamente los usuarios de prueba:
 | `doctor1` | `doctor123` | DOCTOR |
 | `recepcion1` | `recep123` | RECEPTIONIST |
 | `paciente1` | `paciente123` | PATIENT |
+
+Desactivar `APP_SEED_ENABLED` no elimina usuarios de demostración creados en
+ejecuciones anteriores. Antes de desplegar una base de datos existente en
+producción, elimina esas cuentas o cambia y revoca sus credenciales.
 
 ---
 
@@ -84,14 +90,20 @@ GET/POST/PUT/DELETE /api/medical-schedules
 
 ### Citas médicas
 ```
-GET/POST           /api/appointments
-GET/PUT            /api/appointments/{id}
-POST               /api/appointments/{id}/confirm
-POST               /api/appointments/{id}/cancel
-POST               /api/appointments/{id}/reschedule
-POST               /api/appointments/{id}/complete
-POST               /api/appointments/{id}/no-show
+GET/POST           /api/appointments                         (staff)
+GET                /api/appointments/{id}                    (staff)
+PUT                /api/appointments/{id}/cancel             (staff)
+PUT                /api/appointments/{id}/reschedule         (staff)
+GET/POST           /api/appointments/me                      (paciente)
+GET                /api/appointments/me/{id}                 (paciente propietario)
+PUT                /api/appointments/me/{id}/cancel          (paciente propietario)
+PUT                /api/appointments/me/{id}/reschedule      (paciente propietario)
+GET                /api/appointments/doctor/{id}/available-slots
 ```
+
+Los endpoints `/me` identifican al paciente mediante el JWT y nunca reciben
+`patientId`. Los endpoints generales conservan su contrato para el portal del
+staff y están protegidos por rol.
 
 ### Pagos y comprobantes
 ```

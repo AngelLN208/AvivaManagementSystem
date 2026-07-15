@@ -18,8 +18,9 @@ export function AuthProvider({ children }) {
     const token = data.token;
     const payload = parseJwt(token);
 
-    if (payload.role !== 'RECEPTIONIST') {
-      throw new Error('Acceso solo para personal de recepción.');
+    const allowedRoles = ['RECEPTIONIST', 'ADMIN'];
+    if (!allowedRoles.includes(payload.role)) {
+      throw new Error('Acceso denegado.');
     }
 
     localStorage.setItem('token', token);
@@ -27,7 +28,12 @@ export function AuthProvider({ children }) {
     localStorage.setItem('username', payload.sub);
 
     setUsuario({ token, role: payload.role, username: payload.sub });
-    navigate('/');
+
+    if (payload.role === 'ADMIN') {
+      navigate('/admin/dashboard');
+    } else {
+      navigate('/');
+    }
   }
 
   function logout() {

@@ -12,7 +12,7 @@ function saludo() {
   return 'Buenas noches';
 }
 
-export default function Navbar({ onToggleSidebar }) {
+export default function Navbar({ onToggleSidebar, notifPath = '/notificaciones' }) {
   const { tema, toggleTema } = useTheme();
   const { logout } = useAuth();
   const { alertas, isLoading } = useNotificaciones();
@@ -90,7 +90,7 @@ export default function Navbar({ onToggleSidebar }) {
                   ))}
                 </div>
                 <div className="notif-panel-footer">
-                  <Link to="/notificaciones" className="text-primary text-decoration-none small" onClick={() => setPanelAbierto(false)}>
+                  <Link to={notifPath} className="text-primary text-decoration-none small" onClick={() => setPanelAbierto(false)}>
                     Ver todas
                   </Link>
                 </div>

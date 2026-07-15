@@ -1,7 +1,17 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
-export default function ProtectedRoute() {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+export default function ProtectedRoute({ allowedRoles }) {
+  const { isAuthenticated, usuario } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(usuario.role)) {
+    const destination = usuario.role === 'ADMIN' ? '/admin/dashboard' : '/';
+    return <Navigate to={destination} replace />;
+  }
+
+  return <Outlet />;
 }

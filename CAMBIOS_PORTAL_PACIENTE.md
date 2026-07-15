@@ -570,3 +570,27 @@ Endpoints agregados:
 - La construcción local de la imagen queda pendiente porque Docker Engine no
   estaba iniciado durante esta fase. El JAR del backend sí fue empaquetado
   correctamente con Maven antes de preparar el contenedor.
+
+## Fase 10 - Integración del panel administrador (14 de julio de 2026)
+
+- Se integró `origin/main-admin` en una rama independiente creada desde
+  `main-portal`.
+- Se incorporaron las vistas administrativas de dashboard, pacientes,
+  doctores, especialidades, horarios, pagos, seguros y notificaciones.
+- El inicio de sesión admite los roles `RECEPTIONIST` y `ADMIN`, dirige a cada
+  usuario a su panel y protege las rutas por rol. Un recepcionista no puede
+  acceder directamente a una ruta `/admin/...`.
+- La campana de notificaciones reutiliza el componente actual y dirige a la
+  ruta correspondiente según el panel.
+- La gestión de seguros se ubicó exclusivamente en el menú administrador; no
+  se agregó al menú de recepción.
+- Se conservaron los componentes actuales de recepción, incluidos su sidebar,
+  comprobantes, tarjetas de estadísticas y estilos globales.
+- Se descartaron todos los cambios que `main-admin` proponía dentro de
+  `backend/`; la integración no modifica Java ni configuración de Spring.
+
+### Verificación
+
+- `frontend-react`: lint sin errores.
+- `frontend-react`: build de producción correcto con Vite.
+- La comparación final confirma que no existen cambios en `backend/`.

@@ -22,7 +22,12 @@ export default function TablaPagos({ pagos, isLoading, isError, onProcesar, onVe
         <td className="fw-semibold">{paciente}</td>
         <td>{fechaCita}</td>
         <td>{METODO_PAGO_MAP[p.method] || p.method || '—'}</td>
-        <td className="fw-semibold">{monto}</td>
+        <td className="fw-semibold">
+          {monto}
+          {p.insuranceName && (
+            <><br /><small className="texto-exito"><i className="fa-solid fa-shield-halved me-1"></i>{p.insuranceName}</small></>
+          )}
+        </td>
         <td><BadgeEstado estado={p.status} /></td>
         <td className="text-end">
           {p.status === 'PENDING' && (

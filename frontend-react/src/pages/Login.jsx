@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import './Login.css';
 
@@ -8,6 +8,21 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
+
+  useEffect(() => {
+    // El login conserva una presentación clara y aislada. Al salir de esta
+    // pantalla se restaura el tema elegido para el panel del personal.
+    const previousTheme = document.body.getAttribute('data-tema');
+    document.body.setAttribute('data-tema', 'claro');
+
+    return () => {
+      if (previousTheme) {
+        document.body.setAttribute('data-tema', previousTheme);
+      } else {
+        document.body.removeAttribute('data-tema');
+      }
+    };
+  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();

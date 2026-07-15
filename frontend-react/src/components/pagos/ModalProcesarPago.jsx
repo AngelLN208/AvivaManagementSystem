@@ -65,8 +65,30 @@ function ModalProcesarPagoContent({ pago, onConfirmar, onClosed, isSubmitting })
                   <small className="text-muted d-block">Médico</small>
                   <span className="fw-semibold">{medico}</span>
                 </div>
+                {pago?.insuranceName && (
+                  <div className="col-12">
+                    <div className="alert alert-light border rounded-3 py-2 px-3 mb-2">
+                      <small className="text-muted d-block mb-1">
+                        <i className="fa-solid fa-shield-halved me-1 texto-exito"></i>
+                        Cubierto por <strong>{pago.insuranceName}</strong>
+                      </small>
+                      <div className="d-flex justify-content-between small">
+                        <span className="text-muted">Costo base:</span>
+                        <span>S/ {parseFloat(pago.baseAmount || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="d-flex justify-content-between small">
+                        <span className="text-muted">Deducible aplicado:</span>
+                        <span>S/ {parseFloat(pago.deductibleApplied || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="d-flex justify-content-between small texto-exito fw-semibold">
+                        <span>Cubierto por seguro:</span>
+                        <span>- S/ {parseFloat(pago.insuranceCoveredAmount || 0).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="col-12">
-                  <small className="text-muted d-block">Monto a cobrar</small>
+                  <small className="text-muted d-block">Monto a cobrar al paciente</small>
                   <span className="fw-bold fs-5 texto-primario-personalizado">{monto}</span>
                 </div>
               </div>

@@ -11,16 +11,22 @@ export default function TablaNotificaciones({ notificaciones, isLoading, isError
     return <tr><td colSpan={6} className="text-center text-muted py-4">No hay notificaciones.</td></tr>;
   }
 
-  return notificaciones.map((n) => {
-    const estadoInfo = ESTADO_NOTIF_MAP[n.status] || { clase: 'fondo-info-sutil texto-info', label: n.status };
+  return notificaciones.map((notification) => {
+    const status = ESTADO_NOTIF_MAP[notification.status] || {
+      clase: 'fondo-info-sutil texto-info',
+      label: notification.status,
+    };
+
     return (
-      <tr key={n.id}>
-        <td>{TIPO_NOTIF_MAP[n.type] || n.type || '—'}</td>
-        <td>{n.recipientName || n.recipientEmail || '—'}</td>
-        <td className="text-truncate" style={{ maxWidth: 200 }} title={n.subject || ''}>{n.subject || '—'}</td>
-        <td>{n.channel || '—'}</td>
-        <td><span className={`badge ${estadoInfo.clase} rounded-pill px-3 py-1`}>{estadoInfo.label}</span></td>
-        <td>{formatFechaHora(n.createdAt)}</td>
+      <tr key={notification.id}>
+        <td>{TIPO_NOTIF_MAP[notification.type] || notification.type || '—'}</td>
+        <td>{notification.recipientName || notification.recipientEmail || '—'}</td>
+        <td className="text-truncate" style={{ maxWidth: 200 }} title={notification.subject || ''}>
+          {notification.subject || '—'}
+        </td>
+        <td>{notification.channel || '—'}</td>
+        <td><span className={`badge ${status.clase} rounded-pill px-3 py-1`}>{status.label}</span></td>
+        <td>{formatFechaHora(notification.createdAt)}</td>
       </tr>
     );
   });

@@ -518,3 +518,35 @@ Endpoints agregados:
   mantienen alineación y contraste.
 - No se ejecutaron la suite completa del backend, los tests generales del
   portal, lint ni build.
+
+## Fase 8 - Integración segura del frontend de staff (14 de julio de 2026)
+
+### Correcciones sobre `lomasbrabo`
+
+- Se incorporaron los cambios de seguros, pagos y citas de `frontend-react`
+  sin retirar el centro de notificaciones del personal.
+- Se restauraron la ruta, el menú, la campana, la API y los componentes de
+  notificaciones. El hook ya no referencia un módulo eliminado.
+- `AuthContext` y `ThemeContext` vuelven a separar providers, contextos y hooks,
+  conservando Fast Refresh y las reglas del linter.
+- Se retiró el texto informal agregado al navbar y se mantuvo un saludo neutro.
+- El login se presenta siempre en modo claro y restaura al salir la preferencia
+  de tema del panel, evitando que el modo oscuro se filtre a la pantalla pública.
+- El formulario administrativo exige los campos requeridos por el backend,
+  valida DNI de ocho dígitos y evita fechas de póliza invertidas.
+
+### Compatibilidad con el backend congelado
+
+- No se agregó ni modificó ningún endpoint del backend para integrar el
+  frontend de `lomasbrabo`.
+- El alta con seguro utiliza los contratos existentes: primero
+  `POST /api/patients` y después
+  `POST /api/patient-insurances/patient/{patientId}`.
+- Si el paciente se crea y falla la vinculación, el frontend informa que el
+  paciente ya existe, cierra el formulario y refresca la lista. Esto evita que
+  recepción reintente el alta y provoque un conflicto por DNI duplicado.
+
+### Verificación
+
+- `frontend-react`: lint y build de producción correctos.
+- La comparación final confirma que esta fase no deja cambios en `backend/`.

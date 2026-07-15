@@ -2,6 +2,6 @@ import client from './client';
 
 export const getNotificaciones = () => client.get('/notifications');
 
-// Se conserva para el futuro portal del paciente.
+// El portal de staff consulta el estado global; el paciente usa /notifications/me.
 export const getNotificacionesUsuario = (email) =>
   client.get('/notifications/user', { params: { email } });

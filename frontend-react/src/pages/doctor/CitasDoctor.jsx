@@ -1,104 +1,87 @@
-import { useQuery } from '@tanstack/react-query';
-import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AuthContext from '../../context/authContext';
-import { getCitasDeDoctor } from '../../api/citasApi'; // Asegúrate de haber agregado esta función
 
 export default function CitasDoctor() {
-    const { usuario } = useContext(AuthContext);
     const navigate = useNavigate();
 
-    // Asumimos que el backend devuelve el doctorId en el token, o que podemos usar el ID del usuario
-    // Si tu backend requiere un doctorId específico numérico, asegúrate de extraerlo del 'usuario'
-    const doctorId = usuario?.id || 1; // Ajusta esto según cómo guardes el ID en AuthContext
-
-    const { data, isLoading, error } = useQuery({
-        queryKey: ['citasDoctor', doctorId],
-        queryFn: () => getCitasDeDoctor(doctorId),
-    });
-
-    if (isLoading) return <div className="text-[#D4AF37] font-light animate-pulse">Cargando agenda...</div>;
-    if (error) return <div className="text-red-400 font-light border-[0.5px] border-red-500/50 p-4 bg-black/40">Error al cargar las citas.</div>;
-
-    // Extraemos la lista de citas (ajusta según la estructura de tu ApiResponse)
-    const citas = data?.data?.data || [];
+    // Datos ficticios extraídos de tu HTML
+    const citasMock = [
+        { id: 1, hora: '08:00 AM', paciente: 'Carlos Mendoza', motivo: 'Chequeo general', estado: 'Atendida' },
+        { id: 2, hora: '09:00 AM', paciente: 'María González', motivo: 'Dolor de cabeza persistente', estado: 'En Espera' },
+        { id: 3, hora: '10:00 AM', paciente: 'Luis Ramírez', motivo: 'Revisión de exámenes', estado: 'No llega' },
+        { id: 4, hora: '10:30 AM', paciente: 'Ana Sofía Vargas', motivo: 'Fiebre alta', estado: 'Adicional' },
+    ];
 
     return (
-        <div className="max-w-6xl mx-auto">
-        <header className="mb-8">
-            <h2 className="text-3xl font-light text-[#D4AF37] tracking-wide">Citas del Día</h2>
-            <p className="text-gray-400 font-light mt-1 text-sm">Gestiona tus consultas y pacientes</p>
-        </header>
+        <div className="max-w-6xl mx-auto animation-fade-in">
+        <div className="mb-8">
+            <h2 className="text-2xl font-thin text-[#D4AF37] tracking-[0.1em] uppercase">Visión General</h2>
+        </div>
 
-        {/* Contenedor principal con estética cristal/dorada */}
-        <div className="bg-black/40 backdrop-blur-md border-[0.5px] border-[#D4AF37]/30 rounded-sm p-6 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
-            
-            {citas.length === 0 ? (
-            <div className="text-center py-10 text-gray-400 font-light text-sm">
-                No tienes citas programadas por el momento.
+        {/* Tarjeta de Estadísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-black/40 backdrop-blur-md border-[0.5px] border-[#D4AF37]/30 p-6 rounded-sm flex justify-between items-start shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+            <div>
+                <p className="text-gray-400 font-light text-xs tracking-widest uppercase mb-2">Total Pacientes</p>
+                <h3 className="text-3xl font-thin text-[#D4AF37]">24,839</h3>
+                <p className="text-[#D4AF37]/60 text-[10px] mt-2 tracking-wide">+7.8% vs semana pasada</p>
             </div>
-            ) : (
+            <div className="text-[#D4AF37]/40 text-2xl border-[0.5px] border-[#D4AF37]/20 p-3 rounded-sm bg-[#D4AF37]/5">
+                ☖
+            </div>
+            </div>
+        </div>
+
+        {/* Tabla de Citas */}
+        <div className="bg-black/40 backdrop-blur-md border-[0.5px] border-[#D4AF37]/30 rounded-sm p-8 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+            <h5 className="text-lg font-light text-[#D4AF37] mb-6 tracking-wide border-b-[0.5px] border-[#D4AF37]/20 pb-4">
+            CITAS DEL DÍA
+            </h5>
             <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse">
                 <thead>
-                    <tr className="border-b-[0.5px] border-[#D4AF37]/30">
-                    <th className="py-3 px-4 text-[#D4AF37] font-light text-sm uppercase tracking-wider">Hora</th>
-                    <th className="py-3 px-4 text-[#D4AF37] font-light text-sm uppercase tracking-wider">Paciente</th>
-                    <th className="py-3 px-4 text-[#D4AF37] font-light text-sm uppercase tracking-wider">Motivo</th>
-                    <th className="py-3 px-4 text-[#D4AF37] font-light text-sm uppercase tracking-wider">Estado</th>
-                    <th className="py-3 px-4 text-right text-[#D4AF37] font-light text-sm uppercase tracking-wider">Acción</th>
-                    </tr>
+                <tr className="border-b-[0.5px] border-[#D4AF37]/20">
+                    <th className="py-3 px-4 text-[#D4AF37]/70 font-light text-[11px] uppercase tracking-widest">Hora</th>
+                    <th className="py-3 px-4 text-[#D4AF37]/70 font-light text-[11px] uppercase tracking-widest">Paciente</th>
+                    <th className="py-3 px-4 text-[#D4AF37]/70 font-light text-[11px] uppercase tracking-widest">Motivo</th>
+                    <th className="py-3 px-4 text-[#D4AF37]/70 font-light text-[11px] uppercase tracking-widest">Estado</th>
+                    <th className="py-3 px-4 text-[#D4AF37]/70 font-light text-[11px] uppercase tracking-widest text-right">Acción</th>
+                </tr>
                 </thead>
                 <tbody>
-                    {citas.map((cita) => (
-                    <tr 
-                        key={cita.id} 
-                        className="border-b-[0.5px] border-[#D4AF37]/10 hover:bg-[#D4AF37]/5 transition-colors"
-                    >
-                        <td className="py-4 px-4 text-gray-200 font-light text-sm">
-                        {new Date(cita.appointmentDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </td>
-                        <td className="py-4 px-4 text-gray-200 font-light text-sm">
-                        {cita.patient?.firstName} {cita.patient?.lastName}
-                        </td>
-                        <td className="py-4 px-4 text-gray-400 font-light text-sm">
-                        {cita.reason || 'Consulta General'}
-                        </td>
-                        <td className="py-4 px-4">
-                        {/* Badge de estado con trazos finos */}
-                        <span className={`px-3 py-1 rounded-full text-xs font-light border-[0.5px] ${
-                            cita.status === 'CONFIRMED' ? 'border-green-500/50 text-green-400 bg-green-500/10' :
-                            cita.status === 'PENDING' ? 'border-yellow-500/50 text-yellow-400 bg-yellow-500/10' :
-                            cita.status === 'COMPLETED' ? 'border-blue-500/50 text-blue-400 bg-blue-500/10' :
-                            'border-gray-500/50 text-gray-400 bg-gray-500/10'
+                {citasMock.map((cita) => (
+                    <tr key={cita.id} className="border-b-[0.5px] border-[#D4AF37]/10 hover:bg-[#D4AF37]/5 transition-colors">
+                    <td className="py-4 px-4 text-gray-300 font-light text-sm">{cita.hora}</td>
+                    <td className="py-4 px-4 text-gray-200 font-light text-sm">{cita.paciente}</td>
+                    <td className="py-4 px-4 text-gray-400 font-light text-sm">{cita.motivo}</td>
+                    <td className="py-4 px-4">
+                        <span className={`px-3 py-1 rounded-sm text-[10px] font-light border-[0.5px] tracking-wider uppercase ${
+                        cita.estado === 'Atendida' ? 'border-[#D4AF37]/50 text-[#D4AF37] bg-[#D4AF37]/10' :
+                        cita.estado === 'En Espera' ? 'border-blue-400/50 text-blue-300 bg-blue-500/10' :
+                        cita.estado === 'Adicional' ? 'border-purple-400/50 text-purple-300 bg-purple-500/10' :
+                        'border-red-400/50 text-red-300 bg-red-500/10'
                         }`}>
-                            {cita.status}
+                        {cita.estado}
                         </span>
-                        </td>
-                        <td className="py-4 px-4 text-right">
-                        {cita.status === 'CONFIRMED' ? (
-                            <button
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                        {cita.estado === 'En Espera' || cita.estado === 'Adicional' ? (
+                        <button 
                             onClick={() => navigate(`/doctor/atender/${cita.id}`)}
-                            className="px-4 py-1.5 border-[0.5px] border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black transition-all duration-300 font-light text-sm tracking-wide rounded-sm shadow-[0_0_8px_rgba(212,175,55,0.2)]"
-                            >
-                            Atender
-                            </button>
+                            className="px-4 py-1.5 border-[0.5px] border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black transition-all duration-300 font-light text-xs tracking-widest rounded-sm uppercase"
+                        >
+                            Iniciar Consulta
+                        </button>
                         ) : (
-                            <button
-                            disabled
-                            className="px-4 py-1.5 border-[0.5px] border-gray-600/50 text-gray-500 font-light text-sm rounded-sm cursor-not-allowed"
-                            title="El pago debe estar procesado (CONFIRMED) para atender."
-                            >
-                            Pendiente
-                            </button>
+                        <button className="px-4 py-1.5 border-[0.5px] border-gray-600/50 text-gray-500 font-light text-xs tracking-widest rounded-sm uppercase hover:bg-gray-800 transition-colors">
+                            Ver Detalle
+                        </button>
                         )}
-                        </td>
+                    </td>
                     </tr>
-                    ))}
+                ))}
                 </tbody>
-                </table>
+            </table>
             </div>
-            )}
         </div>
         </div>
     );

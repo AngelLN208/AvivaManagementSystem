@@ -7,29 +7,22 @@ import { registrarConsulta } from '../../api/consultasApi';
 export default function AtencionClinica() {
     const { appointmentId } = useParams();
     const navigate = useNavigate();
+    const primaryColor = "#00a4e4";
 
-    // Estado del formulario clínico
     const [diagnostico, setDiagnostico] = useState('');
     const [tratamiento, setTratamiento] = useState('');
     const [notasAdicionales, setNotasAdicionales] = useState('');
 
-    // 1. Obtener los signos vitales (Triaje)
     const { data: triajeData, isLoading: isLoadingTriaje } = useQuery({
         queryKey: ['triaje', appointmentId],
         queryFn: () => getTriajePorCita(appointmentId),
         retry: false,
     });
 
-    // 2. Mutación para guardar la consulta
     const mutationConsulta = useMutation({
         mutationFn: (payload) => registrarConsulta(appointmentId, payload),
-        onSuccess: () => {
-            navigate('/doctor/citas');
-        },
-        onError: (error) => {
-            console.error('Error al registrar consulta:', error);
-            alert('No se pudo registrar la consulta. Verifique que la cita esté CONFIRMED y no tenga una consulta previa.');
-        }
+        onSuccess: () => navigate('/doctor/citas'),
+        onError: () => alert('No se pudo registrar la consulta. Verifique estado de cita.')
     });
 
     const triaje = triajeData?.data?.data;
@@ -40,151 +33,115 @@ export default function AtencionClinica() {
             alert('El diagnóstico y el tratamiento son obligatorios.');
             return;
         }
-
-        mutationConsulta.mutate({
-            diagnosis: diagnostico,
-            treatment: tratamiento,
-            notes: notasAdicionales
-        });
+        mutationConsulta.mutate({ diagnosis: diagnostico, treatment: tratamiento, notes: notasAdicionales });
     };
 
     return (
-        <div className="max-w-7xl mx-auto h-full flex flex-col animation-fade-in font-sans">
-            {/* Cabecera */}
-            <header className="mb-6 flex justify-between items-end border-b pb-4 border-gray-200">
+        <div className="container-fluid p-0">
+            {/* Header */}
+            <div className="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
                 <div>
-                    <h2 className="text-2xl font-bold text-[#004b87]"> {/* Azul Marino Aviva */}
-                        Sala de Atención Clínica
-                    </h2>
-                    <p className="text-gray-500 font-medium mt-1 text-sm">
-                        GESTIÓN DE CITA <span className="text-[#ff6a13]">#{appointmentId}</span> {/* Naranja Aviva */}
-                    </p>
+                    <h2 className="h4 fw-bold mb-1" style={{ color: '#004b87' }}>Sala de Atención Clínica</h2>
+                    <span className="badge bg-light text-dark border">CITA #{appointmentId}</span>
                 </div>
-                <button 
-                    onClick={() => navigate('/doctor/citas')}
-                    className="px-4 py-2 border border-[#004b87] text-[#004b87] hover:bg-[#004b87]/5 transition-colors rounded text-sm font-medium flex items-center gap-2"
-                >
-                    <span>←</span> Volver a la Agenda
+                <button onClick={() => navigate('/doctor/citas')} className="btn btn-outline-secondary">
+                    <i className="bi bi-arrow-left me-2"></i>Volver a la Agenda
                 </button>
-            </header>
+            </div>
 
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                {/* PANEL IZQUIERDO: Triaje e Información */}
-                <div className="lg:col-span-1 space-y-6">
-                    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                        <div className="flex items-center gap-2 mb-4 border-b border-gray-100 pb-3">
-                            <span className="text-[#00a4e4] text-xl">♥</span> {/* Celeste Aviva */}
-                            <h3 className="text-slate-800 font-bold text-lg">
-                                Signos Vitales
-                            </h3>
+            <div className="row g-4">
+                {/* Panel Triaje */}
+                <div className="col-lg-4">
+                    <div className="card border-0 shadow-sm h-100">
+                        <div className="card-header bg-white border-bottom p-3">
+                            <h6 className="fw-bold mb-0" style={{ color: primaryColor }}>
+                                <i className="bi bi-heart-pulse-fill me-2"></i>Signos Vitales
+                            </h6>
                         </div>
-                        
-                        {isLoadingTriaje ? (
-                            <p className="text-[#004b87]/50 font-medium text-sm animate-pulse">Recopilando datos...</p>
-                        ) : !triaje ? (
-                            <div className="bg-gray-50 text-gray-500 p-4 rounded text-sm border border-gray-100 text-center">
-                                No se registró triaje para esta cita.
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                <div className="flex justify-between items-center border-b border-gray-50 pb-2">
-                                    <span className="text-gray-500 font-medium text-sm">Presión Arterial</span>
-                                    <span className="text-slate-800 font-bold">{triaje.systolicPressure}/{triaje.diastolicPressure} <span className="text-xs font-normal text-gray-400">mmHg</span></span>
-                                </div>
-                                <div className="flex justify-between items-center border-b border-gray-50 pb-2">
-                                    <span className="text-gray-500 font-medium text-sm">Temperatura</span>
-                                    <span className="text-slate-800 font-bold">{triaje.temperature} <span className="text-xs font-normal text-gray-400">°C</span></span>
-                                </div>
-                                <div className="flex justify-between items-center border-b border-gray-50 pb-2">
-                                    <span className="text-gray-500 font-medium text-sm">Frec. Cardíaca</span>
-                                    <span className="text-slate-800 font-bold">{triaje.heartRate} <span className="text-xs font-normal text-gray-400">lpm</span></span>
-                                </div>
-                                <div className="flex justify-between items-center border-b border-gray-50 pb-2">
-                                    <span className="text-gray-500 font-medium text-sm">Frec. Respiratoria</span>
-                                    <span className="text-slate-800 font-bold">{triaje.respiratoryRate} <span className="text-xs font-normal text-gray-400">rpm</span></span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-gray-500 font-medium text-sm">Peso / Altura</span>
-                                    <span className="text-slate-800 font-bold">{triaje.weight} <span className="text-xs font-normal text-gray-400">kg</span> / {triaje.height} <span className="text-xs font-normal text-gray-400">cm</span></span>
-                                </div>
-                            </div>
-                        )}
+                        <div className="card-body">
+                            {isLoadingTriaje ? (
+                                <div className="text-center text-muted my-4"><div className="spinner-border spinner-border-sm me-2"></div>Cargando...</div>
+                            ) : !triaje ? (
+                                <div className="alert alert-warning text-center small">No hay triaje registrado por enfermería.</div>
+                            ) : (
+                                <ul className="list-group list-group-flush">
+                                    <li className="list-group-item d-flex justify-content-between px-0">
+                                        <span className="text-muted">Presión Arterial</span>
+                                        <strong>{triaje.systolicPressure}/{triaje.diastolicPressure} <small className="fw-normal">mmHg</small></strong>
+                                    </li>
+                                    <li className="list-group-item d-flex justify-content-between px-0">
+                                        <span className="text-muted">Temperatura</span>
+                                        <strong>{triaje.temperature} <small className="fw-normal">°C</small></strong>
+                                    </li>
+                                    <li className="list-group-item d-flex justify-content-between px-0">
+                                        <span className="text-muted">Frec. Cardíaca</span>
+                                        <strong>{triaje.heartRate} <small className="fw-normal">lpm</small></strong>
+                                    </li>
+                                    <li className="list-group-item d-flex justify-content-between px-0">
+                                        <span className="text-muted">Peso</span>
+                                        <strong>{triaje.weight} <small className="fw-normal">kg</small></strong>
+                                    </li>
+                                </ul>
+                            )}
+                        </div>
                     </div>
                 </div>
 
-                {/* PANEL DERECHO: Formulario de Consulta */}
-                <div className="lg:col-span-2">
-                    <form 
-                        onSubmit={handleSubmit}
-                        className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm h-full flex flex-col"
-                    >
-                        <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-3">
-                            <span className="text-[#004b87] text-xl">✎</span>
-                            <h3 className="text-slate-800 font-bold text-lg">
-                                Registro Médico
-                            </h3>
+                {/* Panel Formulario */}
+                <div className="col-lg-8">
+                    <div className="card border-0 shadow-sm">
+                        <div className="card-header bg-white border-bottom p-3">
+                            <h6 className="fw-bold mb-0 text-dark">
+                                <i className="bi bi-file-earmark-medical-fill me-2" style={{ color: primaryColor }}></i>Registro Médico
+                            </h6>
                         </div>
-
-                        <div className="space-y-5 flex-1">
-                            {/* Diagnóstico */}
-                            <div>
-                                <label className="block text-slate-700 font-bold text-sm mb-2">
-                                    Diagnóstico (CIE-10 o Descripción) <span className="text-[#ff6a13]">*</span>
-                                </label>
-                                <textarea
-                                    required
-                                    rows="3"
-                                    value={diagnostico}
-                                    onChange={(e) => setDiagnostico(e.target.value)}
-                                    className="w-full bg-white border border-gray-300 text-slate-800 focus:border-[#00a4e4] focus:ring-2 focus:ring-[#00a4e4]/20 rounded p-3 outline-none transition-all resize-none text-sm"
-                                    placeholder="Ingrese el diagnóstico clínico detallado..."
-                                />
-                            </div>
-
-                            {/* Tratamiento / Receta */}
-                            <div>
-                                <label className="block text-slate-700 font-bold text-sm mb-2">
-                                    Tratamiento y Receta Médica <span className="text-[#ff6a13]">*</span>
-                                </label>
-                                <textarea
-                                    required
-                                    rows="4"
-                                    value={tratamiento}
-                                    onChange={(e) => setTratamiento(e.target.value)}
-                                    className="w-full bg-white border border-gray-300 text-slate-800 focus:border-[#00a4e4] focus:ring-2 focus:ring-[#00a4e4]/20 rounded p-3 outline-none transition-all resize-none text-sm"
-                                    placeholder="Describa los medicamentos, dosis y duración del tratamiento..."
-                                />
-                            </div>
-
-                            {/* Notas Adicionales */}
-                            <div>
-                                <label className="block text-slate-700 font-bold text-sm mb-2">
-                                    Notas Adicionales <span className="text-gray-400 font-normal">(Opcional)</span>
-                                </label>
-                                <textarea
-                                    rows="2"
-                                    value={notasAdicionales}
-                                    onChange={(e) => setNotasAdicionales(e.target.value)}
-                                    className="w-full bg-white border border-gray-300 text-slate-800 focus:border-[#00a4e4] focus:ring-2 focus:ring-[#00a4e4]/20 rounded p-3 outline-none transition-all resize-none text-sm"
-                                    placeholder="Observaciones internas, recomendaciones de descanso, etc."
-                                />
-                            </div>
+                        <div className="card-body p-4">
+                            <form onSubmit={handleSubmit}>
+                                <div className="mb-4">
+                                    <label className="form-label fw-bold">Diagnóstico Clínico <span className="text-danger">*</span></label>
+                                    <textarea 
+                                        className="form-control bg-light" 
+                                        rows="3" 
+                                        required 
+                                        value={diagnostico} 
+                                        onChange={(e) => setDiagnostico(e.target.value)}
+                                        placeholder="Ingrese el diagnóstico..."
+                                    ></textarea>
+                                </div>
+                                <div className="mb-4">
+                                    <label className="form-label fw-bold">Tratamiento / Receta <span className="text-danger">*</span></label>
+                                    <textarea 
+                                        className="form-control bg-light" 
+                                        rows="4" 
+                                        required 
+                                        value={tratamiento} 
+                                        onChange={(e) => setTratamiento(e.target.value)}
+                                        placeholder="Medicamentos, dosis, indicaciones..."
+                                    ></textarea>
+                                </div>
+                                <div className="mb-4">
+                                    <label className="form-label fw-bold text-muted">Notas Adicionales (Opcional)</label>
+                                    <textarea 
+                                        className="form-control bg-light" 
+                                        rows="2" 
+                                        value={notasAdicionales} 
+                                        onChange={(e) => setNotasAdicionales(e.target.value)}
+                                    ></textarea>
+                                </div>
+                                <div className="text-end border-top pt-3 mt-4">
+                                    <button 
+                                        type="submit" 
+                                        disabled={mutationConsulta.isPending} 
+                                        className="btn text-white px-4 py-2"
+                                        style={{ backgroundColor: primaryColor }}
+                                    >
+                                        {mutationConsulta.isPending ? 'Guardando...' : <><i className="bi bi-check-circle me-2"></i>Finalizar Consulta</>}
+                                    </button>
+                                </div>
+                            </form>
                         </div>
-
-                        {/* Botón de Envío */}
-                        <div className="mt-8 pt-5 border-t border-gray-100 flex justify-end">
-                            <button
-                                type="submit"
-                                disabled={mutationConsulta.isPending}
-                                className="px-8 py-2.5 bg-[#ff6a13] hover:bg-[#e55e0f] text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold text-sm rounded shadow-sm"
-                            >
-                                {mutationConsulta.isPending ? 'Procesando...' : 'Finalizar Consulta'}
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
-
             </div>
         </div>
     );

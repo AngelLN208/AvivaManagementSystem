@@ -3,93 +3,77 @@ import { useContext } from 'react';
 import AuthContext from '../../context/authContext';
 
 export default function DoctorLayout() {
-    const { usuario, logout } = useContext(AuthContext);
-    const location = useLocation();
-    const navigate = useNavigate();
+  const { usuario, logout } = useContext(AuthContext);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-    return (
-        <div 
-        className="min-h-screen bg-cover bg-center flex font-sans"
-        style={{ 
-            backgroundImage: 'url("/fondo-clinica.jpg")', // Asegúrate de tener este escenario guardado en /public
-            backgroundColor: '#0a0a0a' 
-        }}
-        >
-        {/* Overlay translúcido para legibilidad */}
-        <div className="absolute inset-0 bg-black/75 backdrop-blur-sm z-0"></div>
+  // Color celeste principal de la clínica
+  const primaryColor = "#00a4e4"; 
 
-        {/* Sidebar */}
-        <aside className="relative z-10 w-64 bg-black/40 border-r-[0.5px] border-[#D4AF37]/30 flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.6)]">
-            <div className="p-6 border-b-[0.5px] border-[#D4AF37]/20 text-center">
-            <h1 className="text-[#D4AF37] text-2xl font-thin tracking-[0.2em] uppercase">
-                Aviva <span className="font-normal">Clinic</span>
-            </h1>
-            <p className="text-[#D4AF37]/50 text-[10px] mt-2 tracking-widest uppercase">Panel Médico</p>
-            </div>
-
-            <nav className="flex-1 px-4 py-8 space-y-3">
-            <Link 
-                to="/doctor/citas"
-                className={`flex items-center px-4 py-3 rounded-sm border-[0.5px] transition-all duration-300 text-sm font-light tracking-wide ${
-                location.pathname.includes('/doctor/citas') && !location.pathname.includes('/atender')
-                    ? 'bg-[#D4AF37]/10 border-[#D4AF37]/80 text-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.15)]' 
-                    : 'border-transparent text-gray-400 hover:border-[#D4AF37]/40 hover:text-[#D4AF37]/80'
-                }`}
-            >
-                <span className="mr-3">◇</span> Visión General
-            </Link>
-            <Link 
-                to="/doctor/horarios"
-                className={`flex items-center px-4 py-3 rounded-sm border-[0.5px] transition-all duration-300 text-sm font-light tracking-wide ${
-                location.pathname.includes('/doctor/horarios') 
-                    ? 'bg-[#D4AF37]/10 border-[#D4AF37]/80 text-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.15)]' 
-                    : 'border-transparent text-gray-400 hover:border-[#D4AF37]/40 hover:text-[#D4AF37]/80'
-                }`}
-            >
-                <span className="mr-3">◇</span> Calendario
-            </Link>
-            </nav>
-
-            <div className="p-6 border-t-[0.5px] border-[#D4AF37]/20">
-            <button 
-                onClick={logout}
-                className="w-full py-2.5 px-4 border-[0.5px] border-red-500/30 text-red-400/80 hover:bg-red-500/10 hover:border-red-400/80 transition-colors rounded-sm font-light text-xs tracking-widest uppercase"
-            >
-                Cerrar Sesión
-            </button>
-            </div>
-        </aside>
-
-        {/* Contenido Principal */}
-        <div className="relative z-10 flex-1 flex flex-col h-screen overflow-hidden">
-            {/* Top Navbar */}
-            <header className="h-20 border-b-[0.5px] border-[#D4AF37]/20 bg-black/20 backdrop-blur-md flex items-center justify-between px-8">
-            <div className="flex items-center w-96">
-                <div className="relative w-full">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-[#D4AF37]/50 text-sm">⚲</span>
-                <input 
-                    type="text" 
-                    placeholder="Buscar paciente o cita..." 
-                    className="w-full bg-black/40 border-[0.5px] border-[#D4AF37]/20 text-gray-200 text-sm font-light rounded-sm pl-10 pr-4 py-2 outline-none focus:border-[#D4AF37]/60 transition-colors placeholder:text-gray-600"
-                />
-                </div>
-            </div>
-            <div className="flex items-center gap-4 border-l-[0.5px] border-[#D4AF37]/20 pl-6">
-                <div className="text-right">
-                <p className="text-[#D4AF37] text-sm font-light tracking-wide">Dr. {usuario?.username || 'Emile Chen'}</p>
-                <p className="text-gray-500 text-[10px] tracking-widest uppercase">Medicina General</p>
-                </div>
-                <div className="w-10 h-10 rounded-sm border-[0.5px] border-[#D4AF37]/50 p-0.5">
-                <div className="w-full h-full bg-[#D4AF37]/20 rounded-sm"></div>
-                </div>
-            </div>
-            </header>
-
-            {/* Renderizado de vistas */}
-            <main className="flex-1 overflow-y-auto p-8">
-            <Outlet />
-            </main>
+  return (
+    <div className="d-flex bg-light" style={{ minHeight: '100vh', fontFamily: 'Arial, sans-serif' }}>
+      
+      {/* Sidebar Bootstrap */}
+      <div className="bg-white border-end d-flex flex-column" style={{ width: '260px' }}>
+        <div className="text-center py-4 border-bottom">
+          <h3 className="fw-bold mb-0" style={{ color: primaryColor }}>
+            <i className="bi bi-heart-pulse-fill me-2"></i>Aviva<span className="text-dark">Clinic</span>
+          </h3>
+          <small className="text-muted">Portal Médico</small>
         </div>
+
+        <div className="list-group list-group-flush mt-3 px-2 flex-grow-1">
+          <Link 
+            to="/doctor/citas" 
+            className={`list-group-item list-group-item-action border-0 rounded mb-1 ${location.pathname.includes('/doctor/citas') && !location.pathname.includes('/atender') ? 'active' : ''}`}
+            style={location.pathname.includes('/doctor/citas') && !location.pathname.includes('/atender') ? { backgroundColor: primaryColor, color: 'white' } : {}}
+          >
+            <i className="bi bi-grid-fill me-2"></i> Visión General
+          </Link>
+          <Link 
+            to="/doctor/horarios" 
+            className={`list-group-item list-group-item-action border-0 rounded mb-1 ${location.pathname.includes('/doctor/horarios') ? 'active' : ''}`}
+            style={location.pathname.includes('/doctor/horarios') ? { backgroundColor: primaryColor, color: 'white' } : {}}
+          >
+            <i className="bi bi-calendar-week-fill me-2"></i> Mi Calendario
+          </Link>
         </div>
-    );
+
+        <div className="p-3 border-top">
+          <button onClick={logout} className="btn btn-outline-danger w-100">
+            <i className="bi bi-box-arrow-left me-2"></i> Cerrar Sesión
+          </button>
+        </div>
+      </div>
+
+      {/* Contenido Principal */}
+      <div className="flex-grow-1 d-flex flex-column overflow-hidden">
+        
+        {/* Navbar Superior */}
+        <nav className="navbar navbar-expand-lg navbar-light bg-white border-bottom px-4 py-3">
+          <div className="container-fluid">
+            <div className="input-group w-50">
+              <span className="input-group-text bg-light border-end-0"><i className="bi bi-search"></i></span>
+              <input type="text" className="form-control border-start-0 bg-light" placeholder="Buscar pacientes o citas..." />
+            </div>
+            <div className="d-flex align-items-center ms-auto">
+              <div className="text-end me-3">
+                <p className="mb-0 fw-bold text-dark">Dr. {usuario?.username || 'Emile Chen'}</p>
+                <small className="text-muted">Medicina General</small>
+              </div>
+              <div className="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center" style={{ width: '45px', height: '45px' }}>
+                <i className="bi bi-person-fill fs-4"></i>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        {/* Área donde cargan las páginas */}
+        <main className="p-4 overflow-auto flex-grow-1" style={{ backgroundColor: '#f4f7f6' }}>
+          <Outlet />
+        </main>
+
+      </div>
+    </div>
+  );
 }

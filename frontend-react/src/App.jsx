@@ -17,6 +17,10 @@ import PacientesAdmin from './pages/admin/PacientesAdmin';
 import HorariosAdmin from './pages/admin/HorariosAdmin';
 import PagosAdmin from './pages/admin/PagosAdmin';
 import NotificacionesAdmin from './pages/admin/NotificacionesAdmin';
+import DoctorLayout from './components/layout/DoctorLayout';
+import CitasDoctor from './pages/doctor/CitasDoctor';
+import AtencionClinica from './pages/doctor/AtencionClinica';
+import HorariosDoctor from './pages/doctor/HorariosDoctor';
 
 function App() {
   return (
@@ -46,7 +50,19 @@ function App() {
           <Route path="/admin/seguros" element={<Seguros />} />
         </Route>
       </Route>
+
+      <Route element={<ProtectedRoute allowedRoles={['DOCTOR']} />}>
+        <Route element={<DoctorLayout />}>
+          <Route path="/doctor/citas" element={<CitasDoctor />} />
+          {/* Ruta dinámica para atender una cita específica */}
+          <Route path="/doctor/atender/:appointmentId" element={<AtencionClinica />} />
+          <Route path="/doctor/horarios" element={<HorariosDoctor />} />  
+        </Route>
+      </Route>
+      
     </Routes>
+    
+    
   );
 }
 

@@ -12,3 +12,5 @@ export const crearCita = (payload) => client.post('/appointments', payload);
 export const cancelarCita = (id) => client.put(`/appointments/${id}/cancel`);
 export const reprogramarCita = (id, newDateTime) =>
   client.put(`/appointments/${id}/reschedule`, null, { params: { newDateTime } });
+export const getCitasDeDoctor = (doctorId) => 
+  client.get(`/appointments/doctor/${doctorId}`);

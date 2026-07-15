@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,8 +42,10 @@ public class InsuranceController {
     /**
      * Crea un nuevo seguro
      * POST /api/insurances
+     * Solo ADMIN puede crear seguros.
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<InsuranceResponse>> create(
             @Valid @RequestBody InsuranceRequest request) {
         logger.info("POST /api/insurances - Crear seguro");
@@ -85,8 +88,10 @@ public class InsuranceController {
     /**
      * Actualiza un seguro
      * PUT /api/insurances/{id}
+     * Solo ADMIN puede actualizar seguros.
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<InsuranceResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody InsuranceRequest request) {
@@ -101,8 +106,10 @@ public class InsuranceController {
     /**
      * Desactiva un seguro
      * DELETE /api/insurances/{id}
+     * Solo ADMIN puede desactivar seguros.
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<String>> deactivate(@PathVariable Long id) {
         logger.info("DELETE /api/insurances/{} - Desactivar seguro", id);
 

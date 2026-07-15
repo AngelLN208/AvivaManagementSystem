@@ -7,6 +7,7 @@ const items = [
   { to: '/pacientes', icon: 'fa-solid fa-bed-pulse', label: 'Pacientes' },
   { to: '/horario-medicos', icon: 'fa-solid fa-stethoscope', label: 'Horario Médicos' },
   { to: '/pagos', icon: 'fa-solid fa-money-bill-wave', label: 'Pagos' },
+  { to: '/seguros', icon: 'fa-solid fa-shield-heart', label: 'Seguros' },
   { to: '/notificaciones', icon: 'fa-solid fa-bell', label: 'Notificaciones' },
 ];
 

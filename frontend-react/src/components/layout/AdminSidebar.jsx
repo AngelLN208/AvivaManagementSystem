@@ -15,12 +15,16 @@ export default function AdminSidebar({ onClose, abierto }) {
   const { logout } = useAuth();
 
   return (
-    <aside id="sidebar-wrapper" className={`shadow-sm ${abierto ? "menu-abierto" : ""}`}>
+    <aside
+      id="sidebar-wrapper"
+      className={`shadow-sm ${abierto ? "menu-abierto" : ""}`}
+    >
       <div className="sidebar-heading d-flex align-items-center justify-content-between px-3">
         <span>
           <i className="fa-solid fa-notes-medical texto-primario-personalizado me-2"></i>
           AVIVA
         </span>
+
         <button
           className="btn btn-sm d-lg-none text-muted p-0"
           style={{ fontSize: "1.1rem" }}
@@ -51,7 +55,10 @@ export default function AdminSidebar({ onClose, abierto }) {
         <a
           href="#"
           className="list-group-item list-group-item-action rounded-pill text-danger fw-semibold"
-          onClick={logout}
+          onClick={(e) => {
+            e.preventDefault();
+            logout();
+          }}
         >
           <i className="fa-solid fa-right-from-bracket me-3"></i>
           Cerrar sesión

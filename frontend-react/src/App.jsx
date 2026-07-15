@@ -9,6 +9,7 @@ import Pacientes from './pages/Pacientes';
 import HorarioMedicos from './pages/HorarioMedicos';
 import Pagos from './pages/Pagos';
 import Notificaciones from './pages/Notificaciones';
+import Seguros from './pages/Seguros';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import DoctoresAdmin from './pages/admin/DoctoresAdmin';
 import EspecialidadesAdmin from './pages/admin/EspecialidadesAdmin';
@@ -30,6 +31,7 @@ function App() {
           <Route path="/horario-medicos" element={<HorarioMedicos />} />
           <Route path="/pagos" element={<Pagos />} />
           <Route path="/notificaciones" element={<Notificaciones />} />
+          <Route path="/seguros" element={<Seguros />} />
         </Route>
       </Route>
 

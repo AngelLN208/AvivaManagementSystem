@@ -5,6 +5,7 @@ import com.aviva.appointmentsystem.dto.PatientInsuranceResponse;
 import com.aviva.appointmentsystem.entity.Insurance;
 import com.aviva.appointmentsystem.entity.Patient;
 import com.aviva.appointmentsystem.entity.PatientInsurance;
+import com.aviva.appointmentsystem.exception.BusinessRuleException;
 import com.aviva.appointmentsystem.exception.ResourceNotFoundException;
 import com.aviva.appointmentsystem.exception.ValidationException;
 import com.aviva.appointmentsystem.repository.InsuranceRepository;
@@ -12,7 +13,6 @@ import com.aviva.appointmentsystem.repository.PatientInsuranceRepository;
 import com.aviva.appointmentsystem.repository.PatientRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,14 +31,17 @@ public class PatientInsuranceService {
 
     private static final Logger logger = LoggerFactory.getLogger(PatientInsuranceService.class);
 
-    @Autowired
-    private PatientInsuranceRepository patientInsuranceRepository;
+    private final PatientInsuranceRepository patientInsuranceRepository;
+    private final PatientRepository patientRepository;
+    private final InsuranceRepository insuranceRepository;
 
-    @Autowired
-    private PatientRepository patientRepository;
-
-    @Autowired
-    private InsuranceRepository insuranceRepository;
+    public PatientInsuranceService(PatientInsuranceRepository patientInsuranceRepository,
+                                   PatientRepository patientRepository,
+                                   InsuranceRepository insuranceRepository) {
+        this.patientInsuranceRepository = patientInsuranceRepository;
+        this.patientRepository = patientRepository;
+        this.insuranceRepository = insuranceRepository;
+    }
 
     /**
      * Vincula un seguro a un paciente
@@ -56,6 +59,15 @@ public class PatientInsuranceService {
         // RN-07: Validar que el seguro esté activo
         if (!insurance.getActive()) {
             throw new ValidationException("El seguro no está activo");
+        }
+
+        // RN-08: No se puede duplicar la asociación (mismo paciente, mismo seguro)
+        boolean alreadyLinked = patientInsuranceRepository
+                .findByPatientAndInsuranceAndActive(patient, insurance, true)
+                .isPresent();
+        if (alreadyLinked) {
+            throw new BusinessRuleException("RN-08_DUPLICATE",
+                "El paciente ya tiene activa una póliza de '" + insurance.getName() + "'");
         }
 
         // RN-25: Si este es el primario, desactivar el anterior

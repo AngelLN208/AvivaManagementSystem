@@ -1,5 +1,6 @@
 package com.aviva.appointmentsystem.repository;
 
+import com.aviva.appointmentsystem.entity.Insurance;
 import com.aviva.appointmentsystem.entity.Patient;
 import com.aviva.appointmentsystem.entity.PatientInsurance;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,7 +20,8 @@ public interface PatientInsuranceRepository extends JpaRepository<PatientInsuran
     List<PatientInsurance> findByPatient(Patient patient);
     List<PatientInsurance> findByPatientAndActive(Patient patient, Boolean active);
     Optional<PatientInsurance> findByPatientAndIsPrimary(Patient patient, Boolean isPrimary);
-    List<PatientInsurance> findByPatientAndInsuranceIdAndActive(Long patientId, Long insuranceId, Boolean active);
+    // RN-08: detectar duplicado (mismo paciente, mismo seguro, activo)
+    Optional<PatientInsurance> findByPatientAndInsuranceAndActive(Patient patient, Insurance insurance, Boolean active);
     @Query("""
     SELECT pi
     FROM PatientInsurance pi

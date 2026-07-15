@@ -550,3 +550,23 @@ Endpoints agregados:
 
 - `frontend-react`: lint y build de producción correctos.
 - La comparación final confirma que esta fase no deja cambios en `backend/`.
+
+## Fase 9 - Contenedor de despliegue para Render (14 de julio de 2026)
+
+- Se agregó `backend/appointmentsystem/Dockerfile` sin modificar código Java.
+- El build multietapa usa Maven con Java 21 y genera una imagen final basada en
+  Eclipse Temurin JRE 21, ejecutada con un usuario sin privilegios.
+- El contenedor utiliza `PORT=10000` como valor predeterminado compatible con
+  Render; Spring continúa aceptando cualquier valor de `PORT` inyectado por el
+  entorno.
+- Se agregó `.dockerignore` para excluir secretos, pruebas, artefactos locales,
+  metadatos de Git y archivos que no participan en la construcción.
+- Las credenciales y URLs no se incluyen en la imagen; deben configurarse como
+  variables de entorno del servicio de Render.
+
+### Verificación
+
+- El cliente Docker 29.5.2 reconoce la instalación local.
+- La construcción local de la imagen queda pendiente porque Docker Engine no
+  estaba iniciado durante esta fase. El JAR del backend sí fue empaquetado
+  correctamente con Maven antes de preparar el contenedor.

@@ -1,0 +1,19 @@
+# Artefactos y dependencias locales
+target/
+src/test/
+
+# Secretos: Render los inyecta como variables en tiempo de ejecución
+.env
+.env.*
+
+# Metadatos y archivos que no participan en el build
+.git/
+.gitignore
+.gitattributes
+.idea/
+.vscode/
+.mvn/
+mvnw
+mvnw.cmd
+*.log
+*.md
